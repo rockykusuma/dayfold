@@ -16,10 +16,14 @@ struct EntryRow: View {
     private var isTask: Bool { entry.kind == .task }
     private var isClosed: Bool { isTask && !entry.status.isActive }
     private var age: Int { DayPage.age(of: entry, on: day) }
+    /// Scheduled after `day` (e.g. next week's repeat, seen from Search): can't be ticked yet.
+    private var notYet: Bool { isTask && entry.status.isActive && entry.showOn > Calendar.current.startOfDay(for: day) }
 
     var body: some View {
         HStack(alignment: .top, spacing: 4) {
             mark
+                .disabled(notYet)
+                .opacity(notYet ? 0.4 : 1)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(entry.text)
@@ -112,6 +116,10 @@ struct EntryRow: View {
             }
             if isTask && entry.status == .inProgress {
                 Text("· in progress")
+            }
+            if notYet {
+                Text("from \(entry.showOn.formatted(.dateTime.weekday(.abbreviated).day()))")
+                    .accessibilityLabel("Starts \(entry.showOn.formatted(.dateTime.weekday(.wide).day().month(.wide)))")
             }
             if isTask && entry.status.isActive {
                 let days = entry.isWaiting ? Review.waitingDays(entry, on: day) : age
