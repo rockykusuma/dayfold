@@ -10,6 +10,7 @@ public protocol DayPageItem {
     var link: PersonLink? { get }
     var delegatedAt: Date? { get }
     var nudgedAt: Date? { get }
+    var isPriority: Bool { get }
 }
 
 public extension DayPageItem {

@@ -18,7 +18,7 @@ struct DayfoldApp: App {
             return
         }
         #endif
-        let schema = Schema([Entry.self, Person.self])
+        let schema = Schema([Entry.self, Person.self, ChecklistItem.self])
         let config = ModelConfiguration(
             schema: schema,
             cloudKitDatabase: .private("iCloud.com.rockykusuma.dayfold")

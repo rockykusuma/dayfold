@@ -5,7 +5,7 @@ import Testing
 
 @MainActor
 func makeContainer() -> ModelContainer {
-    try! ModelContainer(for: Entry.self, Person.self,
+    try! ModelContainer(for: Entry.self, Person.self, ChecklistItem.self,
                         configurations: ModelConfiguration(isStoredInMemoryOnly: true))
 }
 

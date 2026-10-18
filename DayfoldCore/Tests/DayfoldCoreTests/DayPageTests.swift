@@ -12,6 +12,7 @@ struct FakeItem: DayPageItem {
     var link: PersonLink? = nil
     var delegatedAt: Date? = nil
     var nudgedAt: Date? = nil
+    var isPriority: Bool = false
 }
 
 private let cal: Calendar = {

@@ -25,6 +25,59 @@ public enum EntryStatus: String, Codable, CaseIterable, Sendable {
     public var isActive: Bool { self == .open || self == .inProgress }
 }
 
+/// How a repeating task comes back. Stored on `Entry` as `rawValue`.
+public enum RepeatRule: Hashable, Sendable {
+    case daily, weekdays, weekly
+    /// `day` is 1...31; nil until anchored by `Entry.setRepeat`.
+    case monthly(day: Int?)
+
+    public init?(rawValue: String) {
+        switch rawValue {
+        case "daily": self = .daily
+        case "weekdays": self = .weekdays
+        case "weekly": self = .weekly
+        case "monthly": self = .monthly(day: nil)
+        default:
+            guard rawValue.hasPrefix("monthly:") else { return nil }
+            let n = Int(rawValue.dropFirst("monthly:".count))
+            self = .monthly(day: n.flatMap { (1...31).contains($0) ? $0 : nil })
+        }
+    }
+
+    public var rawValue: String {
+        switch self {
+        case .daily: "daily"
+        case .weekdays: "weekdays"
+        case .weekly: "weekly"
+        case .monthly(let day): day.map { "monthly:\($0)" } ?? "monthly"
+        }
+    }
+
+    /// The picker choice: monthly without its day.
+    public var choice: RepeatRule {
+        if case .monthly = self { return .monthly(day: nil) }
+        return self
+    }
+
+    public var title: String {
+        switch self {
+        case .daily: "Daily"
+        case .weekdays: "Weekdays"
+        case .weekly: "Weekly"
+        case .monthly: "Monthly"
+        }
+    }
+
+    public var summary: String {
+        switch self {
+        case .daily: "Repeats daily"
+        case .weekdays: "Repeats on weekdays"
+        case .weekly: "Repeats weekly"
+        case .monthly: "Repeats monthly"
+        }
+    }
+}
+
 /// One line in Dayfold. Tasks and notes share a single model so the day page is one query.
 ///
 /// CloudKit rules (SwiftData automatic sync): every stored property has a default
@@ -53,6 +106,14 @@ public final class Entry {
     public var delegatedAt: Date?
     /// Last time R followed up on a waiting item.
     public var nudgedAt: Date?
+    /// Flagged as important. Sorts first within its group.
+    public var isPriority: Bool = false
+    /// `RepeatRule.rawValue`, nil when the task doesn't repeat.
+    public var repeatRaw: String?
+    /// Shared by every occurrence of a repeating task; set when a repeat is first chosen.
+    public var seriesID: UUID?
+    @Relationship(deleteRule: .cascade, inverse: \ChecklistItem.entry)
+    public var checklist: [ChecklistItem]?
 
     public init(
         text: String,
@@ -96,6 +157,18 @@ public final class Entry {
     public var link: PersonLink? {
         get { person == nil ? nil : linkRaw.flatMap(PersonLink.init(rawValue:)) }
         set { linkRaw = newValue?.rawValue }
+    }
+}
+
+public extension Entry {
+    var repeatRule: RepeatRule? { repeatRaw.flatMap(RepeatRule.init(rawValue:)) }
+
+    /// Monthly with no day anchors on `showOn`'s day. Any repeat starts a series.
+    func setRepeat(_ rule: RepeatRule?, calendar: Calendar = .current) {
+        var rule = rule
+        if rule == .monthly(day: nil) { rule = .monthly(day: calendar.component(.day, from: showOn)) }
+        repeatRaw = rule?.rawValue
+        if rule != nil { seriesID = seriesID ?? id }
     }
 }
 
