@@ -44,7 +44,7 @@ struct ReviewView: View {
                         VStack(spacing: 24) {
                             progress
                             if queue[index].isWaiting {
-                                Label("Waiting on others · \(queue.filter(\.isWaiting).count)",
+                                Label("Waiting on others · \(queue.dropFirst(index).filter(\.isWaiting).count)",
                                       systemImage: "arrow.forward.circle")
                                     .font(.caption.weight(.semibold))
                                     .foregroundStyle(.orange)
@@ -227,16 +227,16 @@ struct ReviewView: View {
             }
             .buttonStyle(.bordered)
 
-            HStack {
+            pairLayout {
                 ShareLink(item: followUpMessage(entry)) {
-                    Label("Message…", systemImage: "square.and.arrow.up")
+                    Label("Message…", systemImage: "square.and.arrow.up").frame(maxWidth: .infinity, minHeight: 44)
                 }
-                Spacer()
-                Button(role: .destructive) { decide(.drop, "dropped") } label: { Text("Drop") }
-                    .keyboardShortcut(.delete, modifiers: .command)
+                Button(role: .destructive) { decide(.drop, "dropped") } label: {
+                    Text("Drop").frame(maxWidth: .infinity, minHeight: 44)
+                }
+                .keyboardShortcut(.delete, modifiers: .command)
             }
             .buttonStyle(.borderless)
-            .frame(minHeight: 44)
         }
         .controlSize(.large)
     }
