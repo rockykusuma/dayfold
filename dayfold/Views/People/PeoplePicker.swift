@@ -25,7 +25,7 @@ struct PeoplePicker: View {
         NavigationStack {
             List {
                 if canAdd {
-                    Button { pick(try? PeopleDirectory.findOrCreate(search, in: context)) } label: {
+                    Button { pick(PeopleDirectory.create(search, in: context)) } label: {
                         Label("Add “\(PeopleDirectory.displayName(search))”", systemImage: "person.badge.plus")
                     }
                 }
@@ -40,7 +40,9 @@ struct PeoplePicker: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
             }
         }
+        #if os(macOS)
         .frame(minWidth: 360, minHeight: 420)
+        #endif
     }
 
     private func pick(_ person: Person?) {

@@ -319,6 +319,7 @@ struct DayPageView: View {
 private struct EntryEditor: View {
     @Bindable var entry: Entry
     @Environment(\.dismiss) private var dismiss
+    @State private var changingPerson = false
 
     var body: some View {
         NavigationStack {
@@ -336,10 +337,22 @@ private struct EntryEditor: View {
                         Label("Work", systemImage: "briefcase").tag(EntryScope.work)
                         Label("Personal", systemImage: "house").tag(EntryScope.personal)
                     }
-                    TextField("From", text: Binding(
-                        get: { entry.from ?? "" },
-                        set: { entry.from = $0.isEmpty ? nil : $0 }
-                    ), prompt: Text("Who asked?"))
+                    if let person = entry.person {
+                        LabeledContent(entry.link == .to ? "Waiting on" : entry.link == .about ? "About" : "Asked by",
+                                       value: person.name)
+                        Button("Change…") { changingPerson = true }
+                            .frame(minHeight: 44)
+                        Button("Remove person", role: .destructive) {
+                            entry.person = nil
+                            entry.linkRaw = ""
+                        }
+                        .frame(minHeight: 44)
+                    } else {
+                        TextField("From", text: Binding(
+                            get: { entry.from ?? "" },
+                            set: { entry.from = $0.isEmpty ? nil : $0 }
+                        ), prompt: Text("Who asked?"))
+                    }
                 }
                 Section {
                     Toggle("Due date", isOn: Binding(
@@ -358,6 +371,12 @@ private struct EntryEditor: View {
             .navigationTitle("Edit")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+            }
+            .sheet(isPresented: $changingPerson) {
+                PeoplePicker(title: "Change person") { picked in
+                    entry.person = picked
+                    if entry.link == nil { entry.link = .from }
+                }
             }
         }
         .frame(minWidth: 380, minHeight: 360)

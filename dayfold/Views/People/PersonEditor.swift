@@ -13,6 +13,14 @@ struct PersonEditor: View {
     @State private var merging = false
 
     var body: some View {
+        if person.isDeleted || person.modelContext == nil {
+            Color.paper
+        } else {
+            editor
+        }
+    }
+
+    private var editor: some View {
         NavigationStack {
             Form {
                 Section {
@@ -64,7 +72,9 @@ struct PersonEditor: View {
             }
         }
         .interactiveDismissDisabled(blankName)
+        #if os(macOS)
         .frame(minWidth: 380, minHeight: 360)
+        #endif
     }
 
     private var blankName: Bool { person.name.trimmingCharacters(in: .whitespaces).isEmpty }
