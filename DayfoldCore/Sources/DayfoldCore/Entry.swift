@@ -46,6 +46,13 @@ public final class Entry {
     /// Who asked. Optional, free text.
     public var from: String?
     public var tags: [String] = []
+    /// Who this entry is about / for / from. See `link`.
+    public var person: Person?
+    public var linkRaw: String?
+    /// When this became "waiting on" (`link == .to`).
+    public var delegatedAt: Date?
+    /// Last time R followed up on a waiting item.
+    public var nudgedAt: Date?
 
     public init(
         text: String,
@@ -83,6 +90,12 @@ public final class Entry {
     public var status: EntryStatus {
         get { EntryStatus(rawValue: statusRaw) ?? .open }
         set { statusRaw = newValue.rawValue }
+    }
+
+    /// Nil when no person is attached, so a link orphaned by a sync-side delete never counts.
+    public var link: PersonLink? {
+        get { person == nil ? nil : linkRaw.flatMap(PersonLink.init(rawValue:)) }
+        set { linkRaw = newValue?.rawValue }
     }
 }
 

@@ -9,6 +9,9 @@ struct FakeItem: DayPageItem {
     var status: EntryStatus = .open
     var closedAt: Date? = nil
     var showOn: Date
+    var link: PersonLink? = nil
+    var delegatedAt: Date? = nil
+    var nudgedAt: Date? = nil
 }
 
 private let cal: Calendar = {

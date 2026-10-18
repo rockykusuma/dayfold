@@ -7,6 +7,14 @@ public protocol DayPageItem {
     var status: EntryStatus { get }
     var closedAt: Date? { get }
     var showOn: Date { get }
+    var link: PersonLink? { get }
+    var delegatedAt: Date? { get }
+    var nudgedAt: Date? { get }
+}
+
+public extension DayPageItem {
+    /// An open task R handed to someone else.
+    var isWaiting: Bool { kind == .task && link == .to && status.isActive }
 }
 
 /// A day page is a *view*, not storage. Carry-forward is a rule, not a copy:
