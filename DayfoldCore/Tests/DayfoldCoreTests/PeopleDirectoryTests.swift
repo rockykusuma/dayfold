@@ -51,12 +51,43 @@ struct PeopleStoreTests {
     }
 
     @Test func findOrCreateReusesExisting() throws {
-        let a = try PeopleDirectory.findOrCreate("priya", in: context)
+        let a = try #require(try PeopleDirectory.findOrCreate("priya", in: context))
         try context.save()
-        let b = try PeopleDirectory.findOrCreate("Priya", in: context)
+        let b = try #require(try PeopleDirectory.findOrCreate("Priya", in: context))
         #expect(a.id == b.id)
         #expect(try people().count == 1)
         #expect(a.name == "Priya")
+    }
+
+    @Test("Empty names never create a person")
+    func emptyNames() throws {
+        for typed in ["", "   ", "_"] {
+            #expect(try PeopleDirectory.findOrCreate(typed, in: context) == nil)
+        }
+        #expect(try people().isEmpty)
+    }
+
+    @Test("create always adds a new person, even when the name prefixes an existing one")
+    func createAlwaysAdds() throws {
+        context.insert(Person(name: "Samantha"))
+        let sam = try #require(PeopleDirectory.create("sam", in: context))
+        #expect(sam.name == "Sam")
+        #expect(PeopleDirectory.create("  ", in: context) == nil)
+        try context.save()
+        #expect(try people().count == 2)
+    }
+
+    @Test("Backfill matches exact names only, whatever the order")
+    func backfillExactOnly() throws {
+        for order in [["Samantha", "Sam"], ["Sam", "Samantha"]] {
+            let entries = order.map { Entry(text: "t", from: $0) }
+            entries.forEach(context.insert)
+            try PeopleDirectory.backfillFromText(in: context)
+            for (e, name) in zip(entries, order) { #expect(e.person?.name == name) }
+            for e in entries { context.delete(e) }
+            for p in try people() { context.delete(p) }
+            try context.save()
+        }
     }
 
     @Test("Merge keeps the oldest, moves entries, fills missing details, and is idempotent")
@@ -114,7 +145,8 @@ struct PeopleStoreTests {
         PeopleDirectory.delete(p, in: context)
         try context.save()
         #expect(try people().isEmpty)
-        #expect(waiting.person == nil && waiting.linkRaw == nil && waiting.isWaiting == false)
+        #expect(waiting.person == nil && waiting.linkRaw == "" && waiting.isWaiting == false)
+        #expect(waiting.from == "arjun")
         try PeopleDirectory.backfillFromText(in: context)
         #expect(try people().isEmpty)
     }

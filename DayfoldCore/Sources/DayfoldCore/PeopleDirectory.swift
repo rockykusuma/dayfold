@@ -25,9 +25,19 @@ public enum PeopleDirectory {
         return prefixed.count == 1 ? prefixed[0] : nil
     }
 
-    public static func findOrCreate(_ typed: String, in context: ModelContext) throws -> Person {
+    /// Nil when the name is empty.
+    public static func findOrCreate(_ typed: String, in context: ModelContext) throws -> Person? {
         var people = try context.fetch(FetchDescriptor<Person>(sortBy: [SortDescriptor(\.createdAt)]))
         return findOrCreate(typed, among: &people, in: context)
+    }
+
+    /// Always adds a new person (the picker's "Add"); nil when the name is empty.
+    public static func create(_ typed: String, in context: ModelContext) -> Person? {
+        let name = displayName(typed)
+        guard !name.isEmpty else { return nil }
+        let person = Person(name: name)
+        context.insert(person)
+        return person
     }
 
     /// Moves `duplicate`'s entries onto `keeper`, fills details the keeper lacks, deletes the duplicate.
@@ -59,17 +69,20 @@ public enum PeopleDirectory {
         var people = try context.fetch(FetchDescriptor<Person>(sortBy: [SortDescriptor(\.createdAt)]))
         for entry in try context.fetch(FetchDescriptor<Entry>()) where entry.person == nil && entry.linkRaw == nil {
             guard let from = entry.from, !words(from).isEmpty else { continue }
-            entry.person = findOrCreate(from, among: &people, in: context)
+            // Exact names only: a prefix match here would depend on fetch order and never converge.
+            guard let person = findOrCreate(from, among: &people, in: context, exact: true) else { continue }
+            entry.person = person
             entry.link = .from
         }
     }
 
     /// Deletes a person; their entries stay as R's own (waiting items become R's tasks again).
-    /// `from` text is cleared too, so backfill can't recreate the person.
+    /// `from` text stays (who asked); an empty `linkRaw` marks the entry as deliberately unlinked,
+    /// so backfill can't recreate the person.
     public static func delete(_ person: Person, in context: ModelContext) {
         for entry in person.entries ?? [] {
-            entry.link = nil
-            entry.from = nil
+            entry.person = nil
+            entry.linkRaw = ""
         }
         context.delete(person)
     }
@@ -102,10 +115,12 @@ public enum PeopleDirectory {
         s.replacingOccurrences(of: "_", with: " ").split(whereSeparator: \.isWhitespace).map(String.init)
     }
 
-    private static func findOrCreate(_ typed: String, among people: inout [Person], in context: ModelContext) -> Person {
-        if let i = match(typed, in: people.map(\.name)) { return people[i] }
-        let person = Person(name: displayName(typed))
-        context.insert(person)
+    private static func findOrCreate(_ typed: String, among people: inout [Person], in context: ModelContext,
+                                      exact: Bool = false) -> Person? {
+        let names = people.map(\.name)
+        let found = exact ? names.map(normalize).firstIndex(of: normalize(typed)) : match(typed, in: names)
+        if let i = found { return people[i] }
+        guard let person = create(typed, in: context) else { return nil }
         people.append(person)
         return person
     }
