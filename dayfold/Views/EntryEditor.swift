@@ -76,7 +76,7 @@ struct EntryEditor: View {
                 }
                 Section("Tags") {
                     TextField("Tags", text: $tagsText, prompt: Text("hiring, roadmap"))
-                        .onChange(of: tagsText) { entry.tags = Tags.parse(tagsText) }
+                        .onSubmit(commitTags)
                 }
                 if entry.kind == .task {
                     Section {
@@ -93,10 +93,11 @@ struct EntryEditor: View {
                                 .accessibilityLabel(item.isDone ? "Mark not done" : "Mark done")
                                 Text(item.text).strikethrough(item.isDone)
                             }
+                            .contextMenu { Button("Delete", role: .destructive) { delete(item) } }
                         }
                         .onDelete { offsets in
                             let items = entry.sortedChecklist
-                            offsets.forEach { context.delete(items[$0]) }
+                            offsets.map { items[$0] }.forEach(delete)
                         }
                         .onMove { Checklist.move(in: entry, from: $0, to: $1) }
                         TextField("Add item", text: $newItem)
@@ -127,10 +128,11 @@ struct EntryEditor: View {
                     entry.isPriority = false
                 }
             }
+            .onDisappear(perform: commitPending)   // swipe-to-dismiss on iPhone
             .navigationTitle("Edit")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") {
-                    Checklist.add(newItem, to: entry, in: context)
+                    commitPending()
                     dismiss()
                 }  }
             }
@@ -144,5 +146,24 @@ struct EntryEditor: View {
         #if os(macOS)
         .frame(minWidth: 380, minHeight: 520)
         #endif
+    }
+
+    /// Tags are written once, not per keystroke, so partial tags never sync.
+    private func commitTags() {
+        let tags = Tags.parse(tagsText)
+        if tags != entry.tags { entry.tags = tags }
+    }
+
+    /// Typed-but-unsubmitted tags and checklist item. Clears `newItem`, so Done then disappear adds once.
+    private func commitPending() {
+        commitTags()
+        Checklist.add(newItem, to: entry, in: context)
+        newItem = ""
+    }
+
+    /// Off the relationship first, so progress and rows update before the delete is saved.
+    private func delete(_ item: ChecklistItem) {
+        entry.checklist?.removeAll { $0 === item }
+        context.delete(item)
     }
 }

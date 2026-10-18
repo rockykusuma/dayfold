@@ -18,14 +18,18 @@ struct SearchView: View {
     private var query: String { router.query.trimmingCharacters(in: .whitespacesAndNewlines) }
 
     var body: some View {
-        // ponytail: recomputed per keystroke; 5k entries < 1s (SearchTests.largeStore). Debounce if stores grow past that.
+        // ponytail: recomputed per keystroke (see SearchTests.largeStore). Debounce if stores grow large.
         let results = query.isEmpty ? [] : Search.results(entries, query: router.query)
         List {
             if query.isEmpty {
                 browse
             } else if results.isEmpty {
-                ContentUnavailableView("Nothing matches", systemImage: "magnifyingglass",
-                                       description: Text("Nothing matches “\(query)”."))
+                ContentUnavailableView {
+                    Label { Text("Nothing matches").font(.system(.title2, design: .serif, weight: .semibold)) }
+                          icon: { Image(systemName: "magnifyingglass") }
+                } description: {
+                    Text("“\(query)”")
+                }
                     .listRowBackground(Color.clear)
             } else {
                 ForEach(Search.dayGroups(results)) { group in
@@ -35,6 +39,7 @@ struct SearchView: View {
                                      onPerson: { openedPerson = $0 })
                                 .contentShape(Rectangle())
                                 .onTapGesture { editing = entry }
+                                .accessibilityAction(named: "Edit") { editing = entry }
                                 .listRowBackground(Color.clear)
                         }
                     } header: {
@@ -52,6 +57,8 @@ struct SearchView: View {
         .searchSuggestions { suggestions }
         .sheet(item: $editing) { EntryEditor(entry: $0) }
         .navigationDestination(item: $openedPerson) { PersonView(person: $0) }
+        // A tag tapped on a pushed person page should show its results, not stay on the page.
+        .onChange(of: router.shown) { openedPerson = nil }
     }
 
     @ViewBuilder private var browse: some View {
@@ -108,6 +115,8 @@ struct SearchView: View {
     }
 
     private func toggle(_ entry: Entry) {
+        // Next week's occurrence can't be ticked early (its row's mark is disabled too).
+        if entry.status.isActive && entry.showOn > today { return }
         withAnimation(.snappy) {
             if entry.status.isActive { Review.apply(.done, to: entry, context: context) } else { Review.reopen(entry) }
         }

@@ -22,9 +22,12 @@ struct RootView: View {
                 Label("Today", systemImage: "calendar").tag(SidebarItem.today)
                 Label("People", systemImage: "person.2").tag(SidebarItem.people)
                 Label("Search", systemImage: "magnifyingglass").tag(SidebarItem.search)
-                Section("Tags") {
-                    ForEach(Tags.all(entries).prefix(8)) { t in
-                        Label("#\(t.tag)", systemImage: "number").badge(t.count).tag(SidebarItem.tag(t.tag))
+                let tags = Tags.all(entries)
+                if !tags.isEmpty {
+                    Section("Tags") {
+                        ForEach(tags.prefix(8)) { t in
+                            Label("#\(t.tag)", systemImage: "number").badge(t.count).tag(SidebarItem.tag(t.tag))
+                        }
                     }
                 }
                 if !teams.isEmpty {
