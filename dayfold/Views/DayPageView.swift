@@ -41,36 +41,18 @@ struct DayPageView: View {
                     .listRowSeparator(.hidden)
                     .listRowBackground(Color.clear)
 
-                ForEach(items) { entry in
-                    EntryRow(entry: entry, day: day, showScope: filter == .all) { toggle(entry) } onPerson: { openedPerson = $0 }
-                        .listRowInsets(EdgeInsets(top: 0, leading: 8, bottom: 0, trailing: 20))
-                        .listRowBackground(Color.clear)
-                        .swipeActions(edge: .leading) {
-                            if entry.kind == .task && !isPast {
-                                Button { toggle(entry) } label: {
-                                    entry.status.isActive
-                                        ? Label(entry.isWaiting ? "Got it" : "Done", systemImage: "checkmark")
-                                        : Label("Reopen", systemImage: "arrow.uturn.backward")
-                                }
-                                .tint(.green)
-                            }
-                        }
-                        .swipeActions(edge: .trailing) {
-                            if entry.kind == .task && entry.status.isActive && !isPast {
-                                Button { apply(.drop, to: entry) } label: { Label("Drop", systemImage: "xmark") }
-                                    .tint(.red)
-                                Button { apply(.push(to: nextDay), to: entry) } label: {
-                                    Label("Tomorrow", systemImage: "arrow.turn.down.right")
-                                }
-                                .tint(.accentColor)
-                                if !entry.isWaiting {
-                                    Button { delegating = entry } label: { Label("Delegate", systemImage: "person.fill.turn.right") }
-                                        .tint(.orange)
-                                }
-                            }
-                        }
-                        .contextMenu { menu(for: entry) }
+                let split = DayPage.prioritySplit(items)
+                if !split.priority.isEmpty {
+                    Section {
+                        ForEach(split.priority) { row($0) }
+                    } header: {
+                        Text("Priority")
+                            .font(.caption.weight(.semibold))
+                            .textCase(.uppercase)
+                            .foregroundStyle(.secondary)
+                    }
                 }
+                ForEach(split.timeline) { row($0) }
 
                 if items.isEmpty {
                     emptyState
@@ -111,6 +93,39 @@ struct DayPageView: View {
             }
             #endif
         }
+    }
+
+    private func row(_ entry: Entry) -> some View {
+        EntryRow(entry: entry, day: day, showScope: filter == .all) { toggle(entry) } onPerson: { openedPerson = $0 }
+            .listRowInsets(EdgeInsets(top: 0, leading: 8, bottom: 0, trailing: 20))
+            .listRowBackground(Color.clear)
+            .swipeActions(edge: .leading) {
+                if entry.kind == .task && !isPast {
+                    Button { toggle(entry) } label: {
+                        entry.status.isActive
+                            ? Label(entry.isWaiting ? "Got it" : "Done", systemImage: "checkmark")
+                            : Label("Reopen", systemImage: "arrow.uturn.backward")
+                    }
+                    .tint(.green)
+                    if entry.status.isActive { starButton(entry).tint(.accentColor) }
+                }
+            }
+            .swipeActions(edge: .trailing) {
+                if entry.kind == .task && entry.status.isActive && !isPast {
+                    Button { apply(.drop, to: entry) } label: { Label("Drop", systemImage: "xmark") }
+                        .tint(.red)
+                    Button { apply(.push(to: nextDay), to: entry) } label: {
+                        Label("Tomorrow", systemImage: "arrow.turn.down.right")
+                    }
+                    .tint(.accentColor)
+                    if !entry.isWaiting {
+                        Button { delegating = entry } label: { Label("Delegate", systemImage: "person.fill.turn.right") }
+                            .tint(.orange)
+                    }
+                }
+            }
+            .contextMenu { menu(for: entry) }
+            .sensoryFeedback(.selection, trigger: entry.isPriority)
     }
 
     // MARK: Header
@@ -277,6 +292,10 @@ struct DayPageView: View {
                 Button("Done", systemImage: "checkmark") { apply(.done, to: entry) }
                 Button("Push to Tomorrow", systemImage: "arrow.turn.down.right") { apply(.push(to: nextDay), to: entry) }
                 Button("Drop", systemImage: "xmark") { apply(.drop, to: entry) }
+                starButton(entry)
+                if entry.repeatRule != nil {
+                    Button("Stop repeating", systemImage: "stop.circle") { entry.setRepeat(nil) }
+                }
                 Button(entry.isWaiting ? "Delegate to Someone Else…" : "Delegate to…",
                        systemImage: "person.fill.turn.right") { delegating = entry }
             }
@@ -288,6 +307,16 @@ struct DayPageView: View {
                 withAnimation { context.delete(entry) }
             }
         }
+    }
+
+    private func starButton(_ entry: Entry) -> some View {
+        Button { star(entry) } label: {
+            Label(entry.isPriority ? "Unstar" : "Star", systemImage: entry.isPriority ? "star.slash" : "star")
+        }
+    }
+
+    private func star(_ entry: Entry) {
+        withAnimation(.snappy) { entry.isPriority.toggle() }
     }
 
     /// The day after the page being viewed — tomorrow when on Today.
