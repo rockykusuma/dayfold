@@ -71,7 +71,8 @@ struct CaptureParserTests {
     @Test func bangMarksPriority() {
         let p = CaptureParser.parse("Ship deck ! #work", now: now, calendar: cal)
         #expect(p.isPriority && p.text == "Ship deck")
-        #expect(CaptureParser.parse("Wow!", now: now, calendar: cal).isPriority == false)
+        let wow = CaptureParser.parse("Wow!", now: now, calendar: cal)
+        #expect(wow.isPriority == false && wow.text == "Wow!")
         let w = CaptureParser.parse("!urgent fix", now: now, calendar: cal)
         #expect(w.isPriority == false && w.text == "!urgent fix")
     }
