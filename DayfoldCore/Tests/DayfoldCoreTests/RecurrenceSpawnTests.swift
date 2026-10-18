@@ -20,7 +20,7 @@ struct RecurrenceSpawnTests {
     @Test("Spawn copies the task forward with an unchecked checklist and shifted due date")
     func spawnCopies() throws {
         let meera = Person(name: "Meera"); context.insert(meera)
-        let e = repeating("Weekly report", .weekly, showOn: at(2026,10,19,9))
+        let e = repeating("Weekly report", .weekly(weekday: nil), showOn: at(2026,10,19,9))
         e.scope = .personal; e.tags = ["reports"]; e.isPriority = true; e.from = "Meera"
         e.person = meera; e.link = .from; e.dueOn = at(2026,10,21)
         for (i, t) in ["collect metrics", "send"].enumerated() {
@@ -33,7 +33,7 @@ struct RecurrenceSpawnTests {
         let next = try #require(all.last)
         #expect(next.id != e.id && next.status == .open && next.closedAt == nil)
         #expect(next.text == "Weekly report" && next.kind == .task && next.scope == .personal)
-        #expect(next.tags == ["reports"] && next.isPriority && next.repeatRaw == "weekly")
+        #expect(next.tags == ["reports"] && next.isPriority && next.repeatRaw == "weekly:2")
         #expect(next.seriesID == e.id && e.seriesID == e.id)
         #expect(next.person?.id == meera.id && next.link == .from && next.from == "Meera")
         #expect(next.showOn == at(2026,10,26) && next.dueOn == at(2026,10,28) && next.createdAt == at(2026,10,26,9))
@@ -58,19 +58,36 @@ struct RecurrenceSpawnTests {
     @Test("A new occurrence is dated to its own day, so it never looks old or stale")
     func spawnedOnItsOwnDay() throws {
         let nineTen = at(2026,10,19,9).addingTimeInterval(10 * 60)
-        let e = repeating("Weekly report", .weekly, showOn: nineTen)
+        let e = repeating("Weekly report", .weekly(weekday: nil), showOn: nineTen)
         Review.apply(.done, to: e, now: at(2026,10,19,18), calendar: ist, context: context)
         let next = try #require(try series(e).last)
         #expect(next.createdAt == at(2026,10,26,9).addingTimeInterval(10 * 60))
         #expect(DayPage.age(of: next, on: at(2026,10,26), calendar: ist) == 0)
 
         let arjun = Person(name: "Arjun"); context.insert(arjun)
-        let w = repeating("Status from Arjun", .weekly, showOn: nineTen)
+        let w = repeating("Status from Arjun", .weekly(weekday: nil), showOn: nineTen)
         Review.delegate(w, to: arjun, now: nineTen)
         Review.apply(.done, to: w, now: at(2026,10,19,18), calendar: ist, context: context)
         let wNext = try #require(try series(w).last)
         #expect(wNext.isWaiting && wNext.delegatedAt == wNext.createdAt)
         #expect(Review.waitingDays(wNext, on: at(2026,10,26), calendar: ist) == 0)
+    }
+
+    @Test("Pushing one weekly occurrence doesn't move the series")
+    func pushKeepsWeekday() throws {
+        let e = repeating("1:1 prep", .weekly(weekday: nil), showOn: at(2026,10,19,9))   // Monday
+        Review.apply(.push(to: at(2026,10,20)), to: e, calendar: ist)
+        Review.apply(.done, to: e, now: at(2026,10,20,18), calendar: ist, context: context)
+        let next = try #require(try series(e).last)
+        #expect(next.showOn == at(2026,10,26) && next.repeatRaw == "weekly:2")
+    }
+
+    @Test("A bare weekly value still repeats on the occurrence's weekday")
+    func bareWeekly() throws {
+        let e = Entry(text: "Legacy", createdAt: at(2026,10,21,9), calendar: ist)   // Wednesday
+        context.insert(e); e.repeatRaw = "weekly"
+        let next = try #require(Recurrence.spawnNext(from: e, closedOn: at(2026,10,21,18), in: context, calendar: ist))
+        #expect(next.showOn == at(2026,10,28) && next.repeatRaw == "weekly")
     }
 
     @Test("Notes and one-off tasks never spawn")

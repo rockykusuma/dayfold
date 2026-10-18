@@ -81,9 +81,9 @@ struct CaptureParserTests {
         func rule(_ s: String) -> RepeatRule? { CaptureParser.parse("x \(s)", now: now, calendar: cal).repeatRule }
         #expect(rule("every:day") == .daily)
         #expect(rule("every:weekday") == .weekdays && rule("every:weekdays") == .weekdays)
-        #expect(rule("every:week") == .weekly)
+        #expect(rule("every:week") == .weekly(weekday: nil))
         #expect(rule("every:month") == .monthly(day: nil))
-        #expect(rule("every:Week,") == .weekly)
+        #expect(rule("every:Week,") == .weekly(weekday: nil))
         #expect(CaptureParser.parse("Report every:week", now: now, calendar: cal).text == "Report")
     }
 

@@ -27,7 +27,9 @@ public enum EntryStatus: String, Codable, CaseIterable, Sendable {
 
 /// How a repeating task comes back. Stored on `Entry` as `rawValue`.
 public enum RepeatRule: Hashable, Sendable {
-    case daily, weekdays, weekly
+    case daily, weekdays
+    /// `weekday` is 1...7 (Calendar numbering, 1 = Sunday); nil until anchored by `Entry.setRepeat`.
+    case weekly(weekday: Int?)
     /// `day` is 1...31; nil until anchored by `Entry.setRepeat`.
     case monthly(day: Int?)
 
@@ -35,9 +37,14 @@ public enum RepeatRule: Hashable, Sendable {
         switch rawValue {
         case "daily": self = .daily
         case "weekdays": self = .weekdays
-        case "weekly": self = .weekly
+        case "weekly": self = .weekly(weekday: nil)
         case "monthly": self = .monthly(day: nil)
         default:
+            if rawValue.hasPrefix("weekly:") {
+                let n = Int(rawValue.dropFirst("weekly:".count))
+                self = .weekly(weekday: n.flatMap { (1...7).contains($0) ? $0 : nil })
+                return
+            }
             guard rawValue.hasPrefix("monthly:") else { return nil }
             let n = Int(rawValue.dropFirst("monthly:".count))
             self = .monthly(day: n.flatMap { (1...31).contains($0) ? $0 : nil })
@@ -48,15 +55,18 @@ public enum RepeatRule: Hashable, Sendable {
         switch self {
         case .daily: "daily"
         case .weekdays: "weekdays"
-        case .weekly: "weekly"
+        case .weekly(let weekday): weekday.map { "weekly:\($0)" } ?? "weekly"
         case .monthly(let day): day.map { "monthly:\($0)" } ?? "monthly"
         }
     }
 
-    /// The picker choice: monthly without its day.
+    /// The picker choice: weekly / monthly without their anchor.
     public var choice: RepeatRule {
-        if case .monthly = self { return .monthly(day: nil) }
-        return self
+        switch self {
+        case .weekly: .weekly(weekday: nil)
+        case .monthly: .monthly(day: nil)
+        default: self
+        }
     }
 
     public var title: String {
@@ -163,9 +173,10 @@ public final class Entry {
 public extension Entry {
     var repeatRule: RepeatRule? { repeatRaw.flatMap(RepeatRule.init(rawValue:)) }
 
-    /// Monthly with no day anchors on `showOn`'s day. Any repeat starts a series.
+    /// Weekly or monthly without an anchor is anchored on `showOn`'s weekday or day. Any repeat starts a series.
     func setRepeat(_ rule: RepeatRule?, calendar: Calendar = .current) {
         var rule = rule
+        if rule == .weekly(weekday: nil) { rule = .weekly(weekday: calendar.component(.weekday, from: showOn)) }
         if rule == .monthly(day: nil) { rule = .monthly(day: calendar.component(.day, from: showOn)) }
         repeatRaw = rule?.rawValue
         if rule != nil { seriesID = seriesID ?? id }

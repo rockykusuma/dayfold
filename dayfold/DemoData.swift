@@ -67,7 +67,7 @@ enum DemoData {
         let weekly = Entry(text: "Weekly status report", createdAt: at(7, 9, 0))
         ctx.insert(weekly)
         weekly.tags = ["reports"]
-        weekly.setRepeat(.weekly)
+        weekly.setRepeat(.weekly(weekday: nil))
         Review.apply(.done, to: weekly, now: at(0, 9, 30), context: ctx)
         let plants = Entry(text: "Water the plants", scope: .personal, createdAt: at(0, 8, 0))
         ctx.insert(plants)

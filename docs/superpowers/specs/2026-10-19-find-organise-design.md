@@ -44,7 +44,7 @@ paper, serif titles, 44pt targets, Dynamic Type, Reduce Motion).
 | Field | Type | Default | Meaning |
 |---|---|---|---|
 | `isPriority` | `Bool` | `false` | Starred. |
-| `repeatRaw` | `String?` | `nil` | `RepeatRule` raw: `daily`, `weekdays`, `weekly`, `monthly:<day>`. Nil = one-off. |
+| `repeatRaw` | `String?` | `nil` | `RepeatRule` raw: `daily`, `weekdays`, `weekly:<weekday>`, `monthly:<day>`. Nil = one-off. |
 | `seriesID` | `UUID?` | `nil` | Shared by every occurrence of one repeating task. |
 | `checklist` | `[ChecklistItem]?` | `nil` | Subtasks; inverse of `ChecklistItem.entry`, delete rule `.cascade`. |
 
@@ -90,9 +90,12 @@ A separate model (not an embedded array) so two devices ticking different items 
 - Completing every item does **not** close the task (R decides); the row shows `5/5`.
 
 ### Recurrence — `Recurrence`
-- `RepeatRule`: `daily` (every day), `weekdays` (Mon–Fri), `weekly` (same weekday as the occurrence's
-  `showOn`), `monthly(day:)` (same day-of-month, clamped to the month's last day).
-- Raw values: `daily`, `weekdays`, `weekly`, `monthly:<day>` (e.g. `monthly:31`). When monthly is
+- `RepeatRule`: `daily` (every day), `weekdays` (Mon–Fri), `weekly(weekday:)` (same weekday, 1 = Sunday),
+  `monthly(day:)` (same day-of-month, clamped to the month's last day).
+- Raw values: `daily`, `weekdays`, `weekly:<weekday>` (e.g. `weekly:2` = Monday), `monthly:<day>`
+  (e.g. `monthly:31`). When weekly is chosen (parser or editor) the anchor is the entry's `showOn`
+  weekday and is copied to every later occurrence, so pushing one occurrence never moves the series;
+  a bare `weekly` raw value (defensive) repeats on the occurrence's `showOn` weekday. When monthly is
   chosen (parser or editor) the anchor day is the entry's `showOn` day-of-month and is copied to every
   later occurrence, so Jan 31 → Feb 28 → Mar 31 (no drift to the 28th). A bare `monthly` raw value
   (defensive) anchors on the occurrence's `showOn` day.

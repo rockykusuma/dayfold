@@ -73,7 +73,7 @@ public enum CaptureParser {
         switch value {
         case "day": .daily
         case "weekday", "weekdays": .weekdays
-        case "week": .weekly
+        case "week": .weekly(weekday: nil)
         case "month": .monthly(day: nil)
         default: nil
         }

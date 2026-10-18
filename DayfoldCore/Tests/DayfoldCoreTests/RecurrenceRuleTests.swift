@@ -13,7 +13,7 @@ struct RecurrenceRuleTests {
     @Test("Closing late gives the next future date, not catch-up copies")
     func lateClose() {
         #expect(next(.daily, at(2026,10,19), closed: at(2026,10,22,9)) == at(2026,10,23))
-        #expect(next(.weekly, at(2026,10,19), closed: at(2026,11,4,9)) == at(2026,11,9))
+        #expect(next(.weekly(weekday: nil), at(2026,10,19), closed: at(2026,11,4,9)) == at(2026,11,9))
     }
 
     @Test("Weekdays skip Saturday and Sunday")
@@ -25,8 +25,14 @@ struct RecurrenceRuleTests {
 
     @Test("Weekly keeps showOn's weekday even when closed mid-week")
     func weekly() {
-        #expect(next(.weekly, at(2026,10,19), closed: at(2026,10,19,18)) == at(2026,10,26))
-        #expect(next(.weekly, at(2026,10,19), closed: at(2026,10,21,9)) == at(2026,10,26))
+        #expect(next(.weekly(weekday: nil), at(2026,10,19), closed: at(2026,10,19,18)) == at(2026,10,26))
+        #expect(next(.weekly(weekday: nil), at(2026,10,19), closed: at(2026,10,21,9)) == at(2026,10,26))
+    }
+
+    @Test("Anchored weekly returns to its weekday even after an occurrence was pushed")
+    func weeklyAnchored() {
+        #expect(next(.weekly(weekday: 2), at(2026,10,20), closed: at(2026,10,20,18)) == at(2026,10,26)) // pushed to Tue → Mon
+        #expect(next(.weekly(weekday: 2), at(2026,10,19), closed: at(2026,10,19,18)) == at(2026,10,26))
     }
 
     @Test("Monthly clamps to short months and returns to its anchor")
@@ -50,7 +56,7 @@ struct RecurrenceRuleTests {
         // US clocks fall back on Sunday 2026-11-01.
         #expect(next(.daily, nyAt(10,31), closed: nyAt(10,31,20), calendar: ny) == nyAt(11,1))
         #expect(next(.daily, nyAt(11,1), closed: nyAt(11,1,20), calendar: ny) == nyAt(11,2))
-        #expect(next(.weekly, nyAt(10,25), closed: nyAt(10,25,20), calendar: ny) == nyAt(11,1))
+        #expect(next(.weekly(weekday: nil), nyAt(10,25), closed: nyAt(10,25,20), calendar: ny) == nyAt(11,1))
         #expect(next(.weekdays, nyAt(10,30), closed: nyAt(10,30,20), calendar: ny) == nyAt(11,2))
     }
 }

@@ -68,7 +68,7 @@ struct EntryEditor: View {
                             set: { entry.setRepeat($0) }
                         )) {
                             Text("Never").tag(RepeatRule?.none)
-                            ForEach([RepeatRule.daily, .weekdays, .weekly, .monthly(day: nil)], id: \.self) {
+                            ForEach([RepeatRule.daily, .weekdays, .weekly(weekday: nil), .monthly(day: nil)], id: \.self) {
                                 Text($0.title).tag(RepeatRule?.some($0))
                             }
                         }

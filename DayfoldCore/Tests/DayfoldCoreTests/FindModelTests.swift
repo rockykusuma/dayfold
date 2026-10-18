@@ -15,13 +15,17 @@ struct FindModelTests {
     }
 
     @Test func repeatRuleRawValues() {
-        for raw in ["daily", "weekdays", "weekly", "monthly:31"] { #expect(RepeatRule(rawValue: raw)?.rawValue == raw) }
+        for raw in ["daily", "weekdays", "weekly", "weekly:1", "weekly:7", "monthly:31"] { #expect(RepeatRule(rawValue: raw)?.rawValue == raw) }
         #expect(RepeatRule(rawValue: "monthly") == .monthly(day: nil))
         #expect(RepeatRule(rawValue: "monthly:0") == .monthly(day: nil))
         #expect(RepeatRule(rawValue: "monthly:x") == .monthly(day: nil))
+        #expect(RepeatRule(rawValue: "weekly") == .weekly(weekday: nil))
+        #expect(RepeatRule(rawValue: "weekly:2") == .weekly(weekday: 2))
+        #expect(RepeatRule(rawValue: "weekly:9") == .weekly(weekday: nil))
+        #expect(RepeatRule(rawValue: "weekly:0") == .weekly(weekday: nil))
         #expect(RepeatRule(rawValue: "fortnightly") == nil)
         #expect(RepeatRule.monthly(day: nil).rawValue == "monthly")
-        #expect(RepeatRule.monthly(day: 12).choice == .monthly(day: nil) && RepeatRule.weekly.choice == .weekly)
+        #expect(RepeatRule.monthly(day: 12).choice == .monthly(day: nil) && RepeatRule.weekly(weekday: 3).choice == .weekly(weekday: nil))
         #expect(RepeatRule.weekdays.summary == "Repeats on weekdays" && RepeatRule.monthly(day: 3).title == "Monthly")
     }
 
@@ -32,6 +36,13 @@ struct FindModelTests {
         #expect(e.repeatRaw == "monthly:31" && e.seriesID == e.id)
         e.setRepeat(nil, calendar: ist)
         #expect(e.repeatRaw == nil && e.seriesID == e.id)
+    }
+
+    @Test("Choosing Weekly anchors on showOn's weekday")
+    func setRepeatAnchorsWeekly() {
+        let e = Entry(text: "1:1 prep", createdAt: at(2026, 10, 19, 9), calendar: ist)   // Monday
+        e.setRepeat(.weekly(weekday: nil), calendar: ist)
+        #expect(e.repeatRaw == "weekly:2" && e.repeatRule == .weekly(weekday: 2))
     }
 
     @Test("Deleting an entry deletes its checklist")

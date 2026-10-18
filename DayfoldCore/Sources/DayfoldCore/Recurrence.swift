@@ -15,8 +15,8 @@ public enum Recurrence {
         case .weekdays:   // Mon–Fri by weekday number, not locale weekend
             while [1, 7].contains(calendar.component(.weekday, from: d)) { d = dayAfter(d) }
             return d
-        case .weekly:
-            let target = calendar.component(.weekday, from: showOn)
+        case .weekly(let weekday):
+            let target = weekday ?? calendar.component(.weekday, from: showOn)
             while calendar.component(.weekday, from: d) != target { d = dayAfter(d) }
             return d
         case .monthly(let day):
