@@ -106,5 +106,7 @@ long-form journal view. (v0.2–v0.3; see README roadmap.)
   single-level priority (Priority section above the timeline, starred first in Review).
   Spec: docs/superpowers/specs/2026-10-19-find-organise-design.md
 - 2026-10-19 `!` and `every:` typed on a note capture are dropped (priority/repeat are tasks-only).
+- 2026-10-19 Spawned occurrences are dated to their own day (createdAt = showOn + original time of
+  day) so they never look old; a re-delegated copy's waiting clock starts then too.
 - Before the first TestFlight build: deploy the CloudKit schema (ChecklistItem + Entry
   isPriority / repeatRaw / seriesID / checklist) to production in the CloudKit Console.

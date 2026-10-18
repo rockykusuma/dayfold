@@ -102,14 +102,15 @@ A separate model (not an embedded array) so two devices ticking different items 
 - `Recurrence.spawnNext(from entry, closedOn:, in context) -> Entry?`: when a repeating task is closed
   (done **or** dropped), insert the next occurrence: same `text`, `kind`, `scope`, `tags`, `isPriority`,
   `repeatRaw`, `seriesID` (assign one to the first occurrence if nil), `person` + `link`
-  (a `to` link → next one is delegated again with `delegatedAt = now`), `from`; `dueOn` shifted by
-  the same offset from `showOn`; checklist copied **unchecked**; `createdAt = now`; `showOn = nextShowOn`.
+  (a `to` link → next one is delegated again with `delegatedAt = createdAt`), `from`; `dueOn` shifted by
+  the same offset from `showOn`; checklist copied **unchecked**; `showOn = nextShowOn`; `createdAt` =
+  the new `showOn` day at the original occurrence's time of day (so it never looks old or stale).
   Returns nil for non-repeating entries or notes.
 - Hook: `Review.apply(.done / .drop)` calls `spawnNext` (needs a context → new overload
   `Review.apply(_:to:now:calendar:context:)`; the context-free overload stays for tests/back-compat
   and never spawns). Reopening a closed occurrence does **not** delete the spawned next one.
 - `Recurrence.dedupe(in context)`: delete duplicate **open** occurrences with the same `seriesID` and
-  `showOn` (two devices closed the same occurrence offline), keeping the oldest `createdAt`. Runs in
+  `showOn` (two devices closed the same occurrence offline), keeping the oldest `createdAt` (ties → lowest id, so every device keeps the same one). Runs in
   `PeopleDirectory.tidy` → rename to `Maintenance.tidy(in:)` that calls people backfill + merge +
   recurrence dedupe + save. Keep `PeopleDirectory.tidy` as a thin call to it.
 - Stop: setting Repeat to Never clears `repeatRaw` on that occurrence only; already-spawned future

@@ -36,7 +36,7 @@ struct RecurrenceSpawnTests {
         #expect(next.tags == ["reports"] && next.isPriority && next.repeatRaw == "weekly")
         #expect(next.seriesID == e.id && e.seriesID == e.id)
         #expect(next.person?.id == meera.id && next.link == .from && next.from == "Meera")
-        #expect(next.showOn == at(2026,10,26) && next.dueOn == at(2026,10,28) && next.createdAt == now)
+        #expect(next.showOn == at(2026,10,26) && next.dueOn == at(2026,10,28) && next.createdAt == at(2026,10,26,9))
         let items = (next.checklist ?? []).sorted { $0.order < $1.order }
         #expect(items.map(\.text) == ["collect metrics", "send"] && items.allSatisfy { !$0.isDone })
         #expect(e.checklist?.count == 2)
@@ -52,7 +52,25 @@ struct RecurrenceSpawnTests {
         Review.apply(.done, to: e, now: now, calendar: ist, context: context)   // "Got it"
         let next = try #require(try series(e).last)
         #expect(next.isWaiting && next.person?.id == arjun.id)
-        #expect(next.delegatedAt == now && next.nudgedAt == nil && next.showOn == at(2026,10,20))
+        #expect(next.delegatedAt == at(2026,10,20,9) && next.nudgedAt == nil && next.showOn == at(2026,10,20))
+    }
+
+    @Test("A new occurrence is dated to its own day, so it never looks old or stale")
+    func spawnedOnItsOwnDay() throws {
+        let nineTen = at(2026,10,19,9).addingTimeInterval(10 * 60)
+        let e = repeating("Weekly report", .weekly, showOn: nineTen)
+        Review.apply(.done, to: e, now: at(2026,10,19,18), calendar: ist, context: context)
+        let next = try #require(try series(e).last)
+        #expect(next.createdAt == at(2026,10,26,9).addingTimeInterval(10 * 60))
+        #expect(DayPage.age(of: next, on: at(2026,10,26), calendar: ist) == 0)
+
+        let arjun = Person(name: "Arjun"); context.insert(arjun)
+        let w = repeating("Status from Arjun", .weekly, showOn: nineTen)
+        Review.delegate(w, to: arjun, now: nineTen)
+        Review.apply(.done, to: w, now: at(2026,10,19,18), calendar: ist, context: context)
+        let wNext = try #require(try series(w).last)
+        #expect(wNext.isWaiting && wNext.delegatedAt == wNext.createdAt)
+        #expect(Review.waitingDays(wNext, on: at(2026,10,26), calendar: ist) == 0)
     }
 
     @Test("Notes and one-off tasks never spawn")
@@ -112,17 +130,34 @@ struct RecurrenceSpawnTests {
         #expect(try context.fetch(FetchDescriptor<ChecklistItem>()).isEmpty)
     }
 
+    @Test("Dedupe breaks a createdAt tie on id, so every device keeps the same copy")
+    func dedupeTie() throws {
+        let sid = UUID()
+        let copies = (0..<2).map { _ in
+            let e = Entry(text: "r", createdAt: at(2026,10,26,9), calendar: ist)
+            context.insert(e); e.repeatRaw = "weekly"; e.seriesID = sid
+            return e
+        }
+        let keep = copies.map(\.id).min { $0.uuidString < $1.uuidString }
+        try Recurrence.dedupe(in: context); try context.save()
+        #expect(try context.fetch(FetchDescriptor<Entry>()).filter { $0.seriesID == sid }.map(\.id) == [keep])
+    }
+
     @Test("Maintenance.tidy links people and removes duplicate repeats; PeopleDirectory.tidy delegates")
     func tidy() throws {
         let legacy = Entry(text: "x", from: "priya"); context.insert(legacy)
         let sid = UUID()
-        for h in [18, 20] {
+        func occurrence(_ h: Int) {
             let e = Entry(text: "r", createdAt: at(2026,10,19,h), showOn: at(2026,10,20), calendar: ist)
             context.insert(e); e.seriesID = sid; e.repeatRaw = "daily"
         }
+        func count() throws -> Int { try context.fetch(FetchDescriptor<Entry>()).filter { $0.seriesID == sid }.count }
+        occurrence(18); occurrence(20)
         try Maintenance.tidy(in: context)
         #expect(legacy.person?.name == "Priya")
-        #expect(try context.fetch(FetchDescriptor<Entry>()).filter { $0.seriesID == sid }.count == 1)
+        #expect(try count() == 1)
+        occurrence(21)
         try PeopleDirectory.tidy(in: context)
+        #expect(try count() == 1)
     }
 }

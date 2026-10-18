@@ -44,7 +44,10 @@ public enum Recurrence {
         if siblings.contains(where: { $0.status.isActive && $0.showOn > entry.showOn }) { return nil }
 
         let showOn = nextShowOn(rule: rule, after: entry.showOn, closedOn: closedOn, calendar: calendar)
-        let next = Entry(text: entry.text, kind: .task, scope: entry.scope, createdAt: now, showOn: showOn,
+        // Dated to its own day at the original time of day, so it never looks old or stale.
+        let t = calendar.dateComponents([.hour, .minute, .second], from: entry.createdAt)
+        let created = calendar.date(bySettingHour: t.hour ?? 0, minute: t.minute ?? 0, second: t.second ?? 0, of: showOn) ?? showOn
+        let next = Entry(text: entry.text, kind: .task, scope: entry.scope, createdAt: created, showOn: showOn,
                          from: entry.from, tags: entry.tags, calendar: calendar)
         context.insert(next)
         next.isPriority = entry.isPriority
@@ -57,7 +60,7 @@ public enum Recurrence {
         }
         if let person = entry.person {
             if entry.link == .to {
-                Review.delegate(next, to: person, now: now)
+                Review.delegate(next, to: person, now: created)
             } else {
                 next.person = person
                 next.linkRaw = entry.linkRaw
@@ -72,10 +75,11 @@ public enum Recurrence {
     }
 
     /// Two devices can each spawn the same occurrence. Keeps the oldest of every active
-    /// (series, showOn) group and deletes the rest.
+    /// (series, showOn) group and deletes the rest. Spawned copies share `createdAt`, so ties
+    /// break on id: every device keeps the same one.
     public static func dedupe(in context: ModelContext) throws {
-        let entries = try context.fetch(FetchDescriptor<Entry>(predicate: #Predicate { $0.seriesID != nil },
-                                                               sortBy: [SortDescriptor(\.createdAt)]))
+        let entries = try context.fetch(FetchDescriptor<Entry>(predicate: #Predicate { $0.seriesID != nil }))
+            .sorted { ($0.createdAt, $0.id.uuidString) < ($1.createdAt, $1.id.uuidString) }
         var seen = Set<String>()
         for e in entries where e.status.isActive {
             if !seen.insert("\(e.seriesID!)|\(e.showOn.timeIntervalSince1970)").inserted { context.delete(e) }
