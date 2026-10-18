@@ -126,6 +126,8 @@ struct CaptureBar: View {
                             .frame(minHeight: 32)
                             .background(Color.card, in: Capsule())
                             .overlay(Capsule().strokeBorder(.separator, lineWidth: 0.5))
+                            .frame(minHeight: 44)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }
@@ -138,6 +140,13 @@ struct CaptureBar: View {
         guard let token = PeopleDirectory.completionToken(in: text) else { return }
         text = String(text.dropLast(token.keyword.count + token.partial.count))
             + token.keyword + person.name.replacingOccurrences(of: " ", with: "_") + " "
+    }
+
+    /// A note linked .to would never be waiting, so to: always captures a task.
+    private func entryKind(_ parsed: ParsedCapture) -> EntryKind {
+        if linkedTo?.link == .about { return .note }
+        if parsed.to != nil || linkedTo?.link == .to { return .task }
+        return kind
     }
 
     private func link(_ entry: Entry, _ parsed: ParsedCapture) {
@@ -163,7 +172,7 @@ struct CaptureBar: View {
         let parsed = CaptureParser.parse(trimmed)
         let entry = Entry(
             text: parsed.text,
-            kind: linkedTo?.link == .about ? .note : kind,
+            kind: entryKind(parsed),
             scope: parsed.scope ?? scope,
             createdAt: Date(),
             showOn: Calendar.current.isDateInToday(day) ? nil : day,
