@@ -13,7 +13,7 @@ Owner drives Xcode; Claude writes code and reviews. Read `docs/spec.md` first.
 - SwiftData + CloudKit automatic sync: every `Entry` property has a default or is optional; no `@Attribute(.unique)`; enums stored as raw strings. Don't break this.
 - Carry-forward is a query (`DayPage.contains`), never a copy. Put logic in `DayfoldCore` with tests; views stay thin.
 - Both platforms from one codebase; prefer APIs available on iOS 17 and macOS 14.
-- Container `iCloud.com.rockykusuma.dayfold`, bundle id `com.rockykusuma.dayfold.app`. Push Notifications capability deferred — re-add `aps-environment` to `dayfold/dayfold.entitlements` when enabled.
+- Container `iCloud.com.rockykusuma.dayfold`, bundle id `com.rockykusuma.dayfold.app`. Push Notifications capability is on (CloudKit silent pushes drive live sync); no APNs certificates needed.
 - Don't commit `xcuserdata`. Don't run `swift test` outside Xcode for the package (SwiftData is Apple-only); use ⌘U on the `DayfoldCore` scheme.
 
 ## State as of 2026-10-18 night

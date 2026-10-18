@@ -91,3 +91,6 @@ long-form journal view. (v0.2–v0.3; see README roadmap.)
 - 2026-10-18 Push Notifications capability deferred; `aps-environment` removed from
   entitlements until then. Sync is pull-on-foreground meanwhile.
 - 2026-10-18 Bundle id `com.rockykusuma.dayfold.app`; container `iCloud.com.rockykusuma.dayfold`.
+- 2026-10-18 Push Notifications capability enabled (`aps-environment` development, iOS + macOS).
+  Live sync via CloudKit silent pushes verified Mac ↔ iPhone. No refresh button: SwiftData
+  has no public "fetch now" API; push is the mechanism.

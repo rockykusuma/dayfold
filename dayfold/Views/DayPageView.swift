@@ -55,6 +55,7 @@ struct DayPageView: View {
                         .foregroundStyle(.secondary)
                 }
             }
+            .scrollDismissesKeyboard(.interactively)
             .navigationTitle(isToday ? "Today" : day.formatted(.dateTime.weekday(.wide).day().month(.wide)))
             .safeAreaInset(edge: .top) { header }
             .safeAreaInset(edge: .bottom) {
