@@ -68,6 +68,7 @@ struct DelegateActionTests {
         [priya, arjun].forEach(context.insert); context.insert(e)
         e.person = priya; e.link = .from
         e.status = .inProgress
+        e.nudgedAt = day(19); e.closedAt = day(19)
 
         let now = day(20, 11)
         Review.delegate(e, to: arjun, now: now)
@@ -75,6 +76,7 @@ struct DelegateActionTests {
         #expect(e.link == .to && e.isWaiting)
         #expect(e.delegatedAt == now && e.nudgedAt == nil)
         #expect(e.status == .open)
+        #expect(e.nudgedAt == nil && e.closedAt == nil)
         #expect(e.from == "Priya")
     }
 
