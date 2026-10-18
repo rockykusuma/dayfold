@@ -5,10 +5,15 @@ import DayfoldCore
 /// iPhone: Today and People tabs. Mac: sidebar with Today, People, teams, and All waiting.
 struct RootView: View {
     #if os(macOS)
-    enum SidebarItem: Hashable { case today, people, team(String), waiting }
+    enum SidebarItem: Hashable { case today, people, team(String), waiting, search, tag(String) }
 
     @Query(sort: \Person.name) private var people: [Person]
+    @Query(sort: \Entry.createdAt) private var entries: [Entry]
+    #if DEBUG
+    @State private var selection: SidebarItem? = CommandLine.arguments.contains("-search") ? .search : .today
+    #else
     @State private var selection: SidebarItem? = .today
+    #endif
     private var teams: [String] { Array(Set(people.compactMap(\.team))).sorted() }
 
     var body: some View {
@@ -16,6 +21,12 @@ struct RootView: View {
             List(selection: $selection) {
                 Label("Today", systemImage: "calendar").tag(SidebarItem.today)
                 Label("People", systemImage: "person.2").tag(SidebarItem.people)
+                Label("Search", systemImage: "magnifyingglass").tag(SidebarItem.search)
+                Section("Tags") {
+                    ForEach(Tags.all(entries).prefix(8)) { t in
+                        Label("#\(t.tag)", systemImage: "number").badge(t.count).tag(SidebarItem.tag(t.tag))
+                    }
+                }
                 if !teams.isEmpty {
                     Section("Teams") {
                         ForEach(teams, id: \.self) { team in
@@ -34,16 +45,25 @@ struct RootView: View {
             case .people: NavigationStack { PeopleListView() }
             case .team(let team): NavigationStack { PeopleListView(team: team) }.id(team)
             case .waiting: NavigationStack { AllWaitingView() }
+            case .search, .tag: NavigationStack { SearchView() }
             }
         }
         // Review sheet lives in DayPageView, so bring Today forward when Review is requested.
         .onChange(of: ReviewReminder.shared.showReview) { _, show in
             if show { selection = .today }
         }
+        .onChange(of: selection) { _, item in
+            if case .tag(let t) = item { SearchRouter.shared.query = "#\(t)" }
+        }
+        .onChange(of: SearchRouter.shared.shown) { selection = .search }
+        #if DEBUG
+        .task { applySearchFlag() }
+        #endif
     }
     #else
     #if DEBUG
-    @State private var tab = CommandLine.arguments.contains("-people") || CommandLine.arguments.contains("-person") ? 1 : 0
+    @State private var tab = CommandLine.arguments.contains("-search") ? 2
+        : CommandLine.arguments.contains("-people") || CommandLine.arguments.contains("-person") ? 1 : 0
     @Environment(\.modelContext) private var context
     #else
     @State private var tab = 0
@@ -58,8 +78,12 @@ struct RootView: View {
             NavigationStack(path: $peoplePath) { PeopleListView() }
                 .tabItem { Label("People", systemImage: "person.2") }
                 .tag(1)
+            NavigationStack { SearchView() }
+                .tabItem { Label("Search", systemImage: "magnifyingglass") }
+                .tag(2)
         }
         #if DEBUG
+        .task { applySearchFlag() }
         // `-person <Name>` opens that person's page (screenshots can't tap).
         .task {
             let args = CommandLine.arguments
@@ -73,6 +97,17 @@ struct RootView: View {
         .onChange(of: ReviewReminder.shared.showReview) { _, show in
             if show { tab = 0 }
         }
+        .onChange(of: SearchRouter.shared.shown) { tab = 2 }
     }
     #endif
 }
+
+#if DEBUG
+/// `-search [query]` pre-fills the Search query (screenshots can't type).
+private func applySearchFlag() {
+    let args = CommandLine.arguments
+    if let i = args.firstIndex(of: "-search"), i + 1 < args.count, !args[i + 1].hasPrefix("-") {
+        SearchRouter.shared.query = args[i + 1]
+    }
+}
+#endif
