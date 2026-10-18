@@ -29,4 +29,9 @@ struct TagsTests {
         #expect(Tags.parse("#hiring, roadmap  #Hiring ,, q4") == ["hiring", "roadmap", "q4"])
         #expect(Tags.parse(" , ") == [])
     }
+
+    @Test func displayCleansAndDedupes() {
+        #expect(Tags.display(["hiring,", "Hiring", "#ops.", "#,", "ops"]) == ["hiring", "ops"])
+        #expect(Tags.display([]) == [])
+    }
 }

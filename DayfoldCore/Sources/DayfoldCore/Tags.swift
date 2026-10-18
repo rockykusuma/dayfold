@@ -25,6 +25,12 @@ public enum Tags {
             .sorted { $0.count != $1.count ? $0.count > $1.count : $0.id < $1.id }
     }
 
+    /// Tags as shown on a row: cleaned, user's spelling kept, empty ones dropped, one per key, input order.
+    public static func display(_ tags: [String]) -> [String] {
+        var seen = Set<String>()
+        return tags.map(clean).filter { !key($0).isEmpty && seen.insert(key($0)).inserted }
+    }
+
     /// The editor's free-text field: split on spaces and commas, first spelling of each tag wins.
     public static func parse(_ text: String) -> [String] {
         var seen = Set<String>()

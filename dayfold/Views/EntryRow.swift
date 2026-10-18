@@ -99,14 +99,16 @@ struct EntryRow: View {
                 Text("\(Image(systemName: "checklist")) \(p.done)/\(p.total)")
                     .accessibilityLabel("\(p.done) of \(p.total) checklist items done")
             }
-            ForEach(entry.tags.prefix(2), id: \.self) { tag in
+            let tags = Tags.display(entry.tags)
+            ForEach(tags.prefix(2), id: \.self) { tag in
                 Button { SearchRouter.shared.show("#\(tag)") } label: { Text("#\(tag)") }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Tag \(tag)")
                     .accessibilityHint("Searches this tag")
             }
-            if entry.tags.count > 2 {
-                Text("+\(entry.tags.count - 2)")
+            if tags.count > 2 {
+                Text("+\(tags.count - 2)")
+                    .accessibilityLabel("\(tags.count - 2) more tags")
             }
             if isTask && entry.status == .inProgress {
                 Text("· in progress")
