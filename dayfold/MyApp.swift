@@ -21,7 +21,7 @@ struct DayfoldApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            DayPageView()
         }
         .modelContainer(container)
     }
