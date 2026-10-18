@@ -36,14 +36,26 @@ struct RootView: View {
             case .waiting: NavigationStack { AllWaitingView() }
             }
         }
+        // Review sheet lives in DayPageView, so bring Today forward when Review is requested.
+        .onChange(of: ReviewReminder.shared.showReview) { _, show in
+            if show { selection = .today }
+        }
     }
     #else
+    @State private var tab = 0
+
     var body: some View {
-        TabView {
+        TabView(selection: $tab) {
             DayPageView()
                 .tabItem { Label("Today", systemImage: "calendar") }
+                .tag(0)
             NavigationStack { PeopleListView() }
                 .tabItem { Label("People", systemImage: "person.2") }
+                .tag(1)
+        }
+        // Review sheet lives in DayPageView, so bring Today forward when Review is requested.
+        .onChange(of: ReviewReminder.shared.showReview) { _, show in
+            if show { tab = 0 }
         }
     }
     #endif
