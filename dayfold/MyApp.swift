@@ -6,6 +6,7 @@ import UserNotifications
 @main
 struct DayfoldApp: App {
     let container: ModelContainer
+    @Environment(\.scenePhase) private var scenePhase
 
     init() {
         // Set before launch finishes so a tap that cold-launches the app still opens Review.
@@ -17,7 +18,7 @@ struct DayfoldApp: App {
             return
         }
         #endif
-        let schema = Schema([Entry.self])
+        let schema = Schema([Entry.self, Person.self])
         let config = ModelConfiguration(
             schema: schema,
             cloudKitDatabase: .private("iCloud.com.rockykusuma.dayfold")
@@ -40,6 +41,10 @@ struct DayfoldApp: App {
                 }
         }
         .modelContainer(container)
+        .onChange(of: scenePhase, initial: true) { _, phase in
+            // Link legacy from: text and merge people duplicated across devices.
+            if phase == .active { try? PeopleDirectory.tidy(in: container.mainContext) }
+        }
 
         #if os(macOS)
         Settings { SettingsView() }
