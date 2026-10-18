@@ -43,20 +43,32 @@ struct RootView: View {
     }
     #else
     #if DEBUG
-    @State private var tab = CommandLine.arguments.contains("-people") ? 1 : 0
+    @State private var tab = CommandLine.arguments.contains("-people") || CommandLine.arguments.contains("-person") ? 1 : 0
+    @Environment(\.modelContext) private var context
     #else
     @State private var tab = 0
     #endif
+    @State private var peoplePath: [Person] = []
 
     var body: some View {
         TabView(selection: $tab) {
             DayPageView()
                 .tabItem { Label("Today", systemImage: "calendar") }
                 .tag(0)
-            NavigationStack { PeopleListView() }
+            NavigationStack(path: $peoplePath) { PeopleListView() }
                 .tabItem { Label("People", systemImage: "person.2") }
                 .tag(1)
         }
+        #if DEBUG
+        // `-person <Name>` opens that person's page (screenshots can't tap).
+        .task {
+            let args = CommandLine.arguments
+            guard let i = args.firstIndex(of: "-person"), i + 1 < args.count,
+                  let all = try? context.fetch(FetchDescriptor<Person>()),
+                  let k = PeopleDirectory.match(args[i + 1], in: all.map(\.name)) else { return }
+            peoplePath = [all[k]]
+        }
+        #endif
         // Review sheet lives in DayPageView, so bring Today forward when Review is requested.
         .onChange(of: ReviewReminder.shared.showReview) { _, show in
             if show { tab = 0 }

@@ -30,6 +30,11 @@ struct ReviewView: View {
 
     init(entries: [Entry]) {
         _queue = State(initialValue: entries)
+        #if DEBUG
+        if CommandLine.arguments.contains("-waiting") {
+            _index = State(initialValue: entries.firstIndex(where: \.isWaiting) ?? 0)
+        }
+        #endif
         _pushDate = State(initialValue: Calendar.current.date(byAdding: .day, value: 1,
                                                                 to: Calendar.current.startOfDay(for: Date()))!)
     }
@@ -59,16 +64,20 @@ struct ReviewView: View {
                                                       removal: .offset(x: -420).combined(with: .opacity)))
                             }
                             .padding(.bottom, 28) // room for the cards peeking behind
+                            // Accessibility sizes: the buttons would cover the card, so scroll them with it.
+                            if typeSize.isAccessibilitySize { actions }
                         }
                         .padding(20)
                         .readableWidth()
                     }
                     .safeAreaInset(edge: .bottom) {
-                        actions
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 12)
-                            .readableWidth()
-                            .background(Color.paper)
+                        if !typeSize.isAccessibilitySize {
+                            actions
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 12)
+                                .readableWidth()
+                                .background(Color.paper)
+                        }
                     }
                 }
             }

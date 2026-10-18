@@ -20,7 +20,7 @@ Owner drives Xcode; Claude writes code and reviews. Read `docs/spec.md` first.
 ## Design
 - Calm journal look, all native: ink accent (`AccentColor`), `Paper` background, `Card` surfaces — asset-catalog colors with dark variants (`Color.paper`, `Color.card`). Serif (`design: .serif`) for dates, Review card text, empty states; system font elsewhere.
 - Bullet marks: ○ task (44pt tap target), – note. Age pill turns amber at 3+ days. Haptics via `.sensoryFeedback`; animations `.snappy`, respect Reduce Motion.
-- Debug only: launch with `-demo` for an in-memory sample day (no iCloud, no permission prompt); add `-review` to open Review. `DemoData.swift`.
+- Debug only: launch with `-demo` for an in-memory sample day (no iCloud, no permission prompt); add `-review` to open Review (`-waiting` starts on the first waiting card), `-settings` for Settings, `-people` (iOS) for the People tab, `-person <Name>` (iOS) for that person's page. `DemoData.swift`.
 
 ## State as of 2026-10-18 night
 - v0.1 screens done: `DayPageView`, `ReviewView`, `SettingsView`, `ReviewReminder` (see Layout). Mac menu-bar capture: `Views/MenuBarCapture.swift`.
