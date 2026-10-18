@@ -11,6 +11,7 @@ struct ReviewView: View {
     @State private var index = 0
     @State private var tally: [String: Int] = [:]
     @State private var pickingDate = false
+    @State private var delegating = false
     @State private var pushDate: Date
 
     private let calendar = Calendar.current
@@ -42,6 +43,13 @@ struct ReviewView: View {
                     ScrollView {
                         VStack(spacing: 24) {
                             progress
+                            if queue[index].isWaiting {
+                                Label("Waiting on others · \(queue.filter(\.isWaiting).count)",
+                                      systemImage: "arrow.forward.circle")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.orange)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
                             ZStack {
                                 card(queue[index])
                                     .id(queue[index].id)
@@ -77,6 +85,16 @@ struct ReviewView: View {
                 }
             }
             .sheet(isPresented: $pickingDate) { datePickerSheet }
+            .sheet(isPresented: $delegating) {
+                PeoplePicker(title: "Delegate to") { person in
+                    guard !finished else { return }
+                    withAnimation(reduceMotion ? .default : .snappy(duration: 0.3)) {
+                        Review.delegate(queue[index], to: person)
+                        tally["delegated", default: 0] += 1
+                        index += 1
+                    }
+                }
+            }
             .sensoryFeedback(.impact(weight: .light), trigger: index)
         }
     }
@@ -99,13 +117,19 @@ struct ReviewView: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(alignment: .top) {
                 pairLayout {
-                    Label(entry.scope == .work ? "Work" : "Personal",
-                          systemImage: entry.scope == .work ? "briefcase" : "house")
-                    if let from = entry.from, !from.isEmpty { Text("from \(from)") }
+                    if entry.isWaiting, let person = entry.person {
+                        Label("Waiting on \(person.name)", systemImage: "arrow.forward.circle")
+                            .foregroundStyle(.orange)
+                        if let team = person.team { Text(team) }
+                    } else {
+                        Label(entry.scope == .work ? "Work" : "Personal",
+                              systemImage: entry.scope == .work ? "briefcase" : "house")
+                        if let from = entry.person?.name ?? entry.from, !from.isEmpty { Text("from \(from)") }
+                    }
                 }
                 Spacer(minLength: 8)
-                let age = DayPage.age(of: entry, on: today)
-                if age > 0 { AgeBadge(days: age) }
+                let days = entry.isWaiting ? Review.waitingDays(entry, on: today) : DayPage.age(of: entry, on: today)
+                if days > 0 { AgeBadge(days: days) }
             }
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -151,7 +175,16 @@ struct ReviewView: View {
         .accessibilityHidden(true)
     }
 
+    @ViewBuilder
     private var actions: some View {
+        if !finished, queue[index].isWaiting {
+            waitingActions(queue[index])
+        } else {
+            ownActions
+        }
+    }
+
+    private var ownActions: some View {
         VStack(spacing: 12) {
             Button { decide(.done, "done") } label: {
                 Label("Done", systemImage: "checkmark").frame(maxWidth: .infinity, minHeight: 32)
@@ -164,15 +197,7 @@ struct ReviewView: View {
                 Button { decide(.stillGoing, "still going") } label: {
                     Label("Still going", systemImage: "circle.lefthalf.filled").frame(maxWidth: .infinity, minHeight: 32)
                 }
-                Menu {
-                    Button("Tomorrow") { decide(.push(to: tomorrow), "pushed") }
-                    Button("Next Monday") { decide(.push(to: nextMonday), "pushed") }
-                    Divider()
-                    Button("Pick a date…") { pickingDate = true }
-                } label: {
-                    Label("Push to…", systemImage: "arrow.turn.down.right").frame(maxWidth: .infinity, minHeight: 32)
-                }
-                .menuIndicator(.hidden)
+                laterMenu("Push to…", delegate: true)
             }
             .buttonStyle(.bordered)
 
@@ -183,6 +208,58 @@ struct ReviewView: View {
             .keyboardShortcut(.delete, modifiers: .command)
         }
         .controlSize(.large)
+    }
+
+    private func waitingActions(_ entry: Entry) -> some View {
+        VStack(spacing: 12) {
+            Button { decide(.done, "got it") } label: {
+                Label("Got it", systemImage: "checkmark").frame(maxWidth: .infinity, minHeight: 32)
+                    .foregroundStyle(Color.paper)
+            }
+            .buttonStyle(.borderedProminent)
+            .keyboardShortcut(.defaultAction)
+
+            pairLayout {
+                Button { decide(.nudged, "nudged") } label: {
+                    Label("Nudged today", systemImage: "bell").frame(maxWidth: .infinity, minHeight: 32)
+                }
+                laterMenu("Follow up on…", delegate: false)
+            }
+            .buttonStyle(.bordered)
+
+            HStack {
+                ShareLink(item: followUpMessage(entry)) {
+                    Label("Message…", systemImage: "square.and.arrow.up")
+                }
+                Spacer()
+                Button(role: .destructive) { decide(.drop, "dropped") } label: { Text("Drop") }
+                    .keyboardShortcut(.delete, modifiers: .command)
+            }
+            .buttonStyle(.borderless)
+            .frame(minHeight: 44)
+        }
+        .controlSize(.large)
+    }
+
+    private func laterMenu(_ title: String, delegate: Bool) -> some View {
+        Menu {
+            Button("Tomorrow") { decide(.push(to: tomorrow), "pushed") }
+            Button("Next Monday") { decide(.push(to: nextMonday), "pushed") }
+            Divider()
+            Button("Pick a date…") { pickingDate = true }
+            if delegate {
+                Divider()
+                Button("Delegate to…") { delegating = true }
+            }
+        } label: {
+            Label(title, systemImage: "arrow.turn.down.right").frame(maxWidth: .infinity, minHeight: 32)
+        }
+        .menuIndicator(.hidden)
+    }
+
+    private func followUpMessage(_ entry: Entry) -> String {
+        let first = entry.person?.name.split(separator: " ").first.map(String.init) ?? "there"
+        return "Hi \(first), checking in on: \(entry.text)"
     }
 
     private var summary: some View {
@@ -196,7 +273,7 @@ struct ReviewView: View {
             Text(queue.isEmpty ? "No open tasks today." : "Tomorrow's page is ready.")
                 .foregroundStyle(.secondary)
             if !tally.isEmpty {
-                Text(["done", "still going", "pushed", "dropped"]
+                Text(["done", "got it", "still going", "pushed", "delegated", "nudged", "dropped"]
                     .compactMap { key in tally[key].map { "\($0) \(key)" } }
                     .joined(separator: " · "))
                     .font(.subheadline.monospacedDigit())

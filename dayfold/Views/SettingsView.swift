@@ -8,6 +8,7 @@ struct SettingsView: View {
     @AppStorage(ReviewReminder.hourKey) private var hour = ReviewReminder.defaultHour
     @AppStorage(ReviewReminder.minuteKey) private var minute = ReviewReminder.defaultMinute
     @AppStorage(ReviewReminder.weekdaysKey) private var weekdays = ReviewReminder.defaultWeekdays
+    @AppStorage("review.nudgeAfter") private var nudgeAfter = 3
     @Environment(\.openURL) private var openURL
     @Environment(\.scenePhase) private var scenePhase
     @State private var notifications: UNAuthorizationStatus?
@@ -26,12 +27,15 @@ struct SettingsView: View {
                         ForEach(orderedWeekdays, id: \.self) { dayButton($0) }
                     }
                 }
+                Stepper(value: $nudgeAfter, in: 1...14) {
+                    LabeledContent("Nudge after", value: nudgeAfter == 1 ? "1 day" : "\(nudgeAfter) days")
+                }
             } header: {
                 Text("Evening review")
             } footer: {
                 Text(weekdays.isEmpty
                      ? "No days selected — the reminder is off. You can still open Review from the toolbar."
-                     : "A reminder to fold today's open tasks into tomorrow.")
+                     : "A reminder to fold today's open tasks into tomorrow. Things you're waiting on join Review once they've waited this long.")
             }
 
             Section("Notifications") {

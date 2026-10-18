@@ -18,6 +18,7 @@ struct DayPageView: View {
     @State private var showSettings = false
     #endif
     @Bindable private var reminder = ReviewReminder.shared
+    @AppStorage("review.nudgeAfter") private var nudgeAfter = 3
     @FocusState private var captureFocused: Bool
 
     private let calendar = Calendar.current
@@ -28,7 +29,8 @@ struct DayPageView: View {
     private var items: [Entry] {
         DayPage.items(allEntries, on: day).filter { filter.includes($0.scope) }
     }
-    private var pendingReview: [Entry] { Review.pending(allEntries, on: today) }
+    /// Tonight's Review: own tasks, then waiting items past the nudge threshold.
+    private var pendingReview: [Entry] { Review.queue(allEntries, on: today, nudgeAfter: nudgeAfter) }
 
     var body: some View {
         NavigationStack {
