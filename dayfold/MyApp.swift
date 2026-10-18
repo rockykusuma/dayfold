@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import DayfoldCore
+import UserNotifications
 
 @main
 struct DayfoldApp: App {
@@ -17,11 +18,14 @@ struct DayfoldApp: App {
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }
+        // Set before launch finishes so a tap that cold-launches the app still opens Review.
+        UNUserNotificationCenter.current().delegate = ReviewReminder.shared
     }
 
     var body: some Scene {
         WindowGroup {
             DayPageView()
+                .task { await ReviewReminder.shared.schedule() }
         }
         .modelContainer(container)
     }

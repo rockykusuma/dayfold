@@ -10,7 +10,7 @@ struct DayPageView: View {
     @AppStorage("dayPage.scope") private var filter: ScopeFilter = .all
     @State private var day = Calendar.current.startOfDay(for: Date())
     @State private var editing: Entry?
-    @State private var showReview = false
+    @Bindable private var reminder = ReviewReminder.shared
     @FocusState private var captureFocused: Bool
 
     private let calendar = Calendar.current
@@ -63,7 +63,7 @@ struct DayPageView: View {
             }
             .toolbar {
                 ToolbarItemGroup(placement: .primaryAction) {
-                    Button { showReview = true } label: {
+                    Button { reminder.showReview = true } label: {
                         Label("Review (\(pendingReview.count))", systemImage: "tray.full")
                     }
                     .keyboardShortcut("r", modifiers: .command)
@@ -77,7 +77,7 @@ struct DayPageView: View {
                 }
             }
             .sheet(item: $editing) { EntryEditor(entry: $0) }
-            .sheet(isPresented: $showReview) { ReviewView(entries: pendingReview) }
+            .sheet(isPresented: $reminder.showReview) { ReviewView(entries: pendingReview) }
         }
     }
 
