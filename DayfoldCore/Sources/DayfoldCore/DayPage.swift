@@ -52,6 +52,15 @@ public enum DayPage {
         items.filter { contains($0, on: day, calendar: calendar) }
     }
 
+    /// Splits a day's items into the Priority section (starred, active tasks) and the rest. Both keep input order.
+    public static func prioritySplit<Item: DayPageItem>(_ items: [Item]) -> (priority: [Item], timeline: [Item]) {
+        var priority: [Item] = [], timeline: [Item] = []
+        for item in items {
+            if item.isPriority && item.kind == .task && item.status.isActive { priority.append(item) } else { timeline.append(item) }
+        }
+        return (priority, timeline)
+    }
+
     /// Whole days between capture and `day`. Drives the age badge ("asked 4d ago").
     public static func age<Item: DayPageItem>(of item: Item, on day: Date, calendar: Calendar = .current) -> Int {
         let from = calendar.startOfDay(for: item.createdAt)

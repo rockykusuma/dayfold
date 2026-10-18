@@ -36,9 +36,10 @@ public enum Review {
             .sorted { waitingDays($0, on: day, calendar: calendar) > waitingDays($1, on: day, calendar: calendar) }
     }
 
-    /// Tonight's Review: own tasks, then stale waiting items.
+    /// Tonight's Review: starred own tasks, other own tasks, then stale waiting items.
     public static func queue<Item: DayPageItem>(_ items: [Item], on day: Date, nudgeAfter days: Int, calendar: Calendar = .current) -> [Item] {
-        pending(items, on: day, calendar: calendar) + staleWaiting(items, on: day, after: days, calendar: calendar)
+        let own = pending(items, on: day, calendar: calendar)
+        return own.filter(\.isPriority) + own.filter { !$0.isPriority } + staleWaiting(items, on: day, after: days, calendar: calendar)
     }
 
     /// Hand a task to someone. Keeps "who asked" as `from` text when it came from another person.
