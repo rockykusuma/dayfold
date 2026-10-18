@@ -30,7 +30,7 @@ struct DayfoldApp: App {
     }
 
     var body: some Scene {
-        WindowGroup {
+        WindowGroup(id: "main") {
             DayPageView()
                 .task {
                     #if DEBUG
@@ -43,6 +43,12 @@ struct DayfoldApp: App {
 
         #if os(macOS)
         Settings { SettingsView() }
+
+        MenuBarExtra("Dayfold", systemImage: "pencil.line") {
+            MenuBarCapture()
+                .modelContainer(container)
+        }
+        .menuBarExtraStyle(.window)
         #endif
     }
 }

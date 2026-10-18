@@ -24,4 +24,5 @@ Owner drives Xcode; Claude writes code and reviews. Read `docs/spec.md` first.
 ## State as of 2026-10-18 night
 - v0.1 screens done: `DayPageView` (header, day nav, scope, swipe/context actions, edit sheet), `ReviewView` (card stack, tally), `SettingsView` (review time + days, notification + iCloud status; Mac ⌘, window, iPhone gear sheet), `ReviewReminder` (scheduled from stored settings; tap opens Review).
 - Builds Debug + Release on macOS + iOS. DayfoldCore tests: run from `DayfoldCore/` with `xcodebuild test -scheme DayfoldCore -destination platform=macOS` (⌘U needs the test target added to the scheme's Test action).
-- Not yet: Mac menu-bar capture item / ⌘N capture sheet; notification permission is requested at first launch (consider asking contextually).
+- Mac menu-bar capture: `Views/MenuBarCapture.swift` (MenuBarExtra, reuses CaptureBar; main window is `WindowGroup(id: "main")`).
+- Not yet: ⌘N capture sheet (⌘N focuses the capture bar instead), global hotkey for the menu-bar panel; notification permission is requested at first launch (consider asking contextually).
