@@ -126,7 +126,7 @@ struct PersonView: View {
 
     private func toggle(_ entry: Entry) {
         withAnimation(.snappy) {
-            if entry.status.isActive { Review.apply(.done, to: entry) } else { Review.reopen(entry) }
+            if entry.status.isActive { Review.apply(.done, to: entry, context: context) } else { Review.reopen(entry) }
         }
     }
 }

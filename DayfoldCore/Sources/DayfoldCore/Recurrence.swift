@@ -30,4 +30,55 @@ public enum Recurrence {
             }
         }
     }
+
+    /// Creates the next occurrence of a repeating task that was just closed. Nil for notes,
+    /// one-off tasks, or when a later occurrence is already active (done, undo, done again).
+    @discardableResult
+    public static func spawnNext(from entry: Entry, closedOn: Date, now: Date = Date(),
+                                 in context: ModelContext, calendar: Calendar = .current) -> Entry? {
+        guard entry.kind == .task, let rule = entry.repeatRule else { return nil }
+        // The first occurrence's id, so devices that each start the series agree on it.
+        entry.seriesID = entry.seriesID ?? entry.id
+        let sid: UUID? = entry.seriesID
+        let siblings = (try? context.fetch(FetchDescriptor<Entry>(predicate: #Predicate { $0.seriesID == sid }))) ?? []
+        if siblings.contains(where: { $0.status.isActive && $0.showOn > entry.showOn }) { return nil }
+
+        let showOn = nextShowOn(rule: rule, after: entry.showOn, closedOn: closedOn, calendar: calendar)
+        let next = Entry(text: entry.text, kind: .task, scope: entry.scope, createdAt: now, showOn: showOn,
+                         from: entry.from, tags: entry.tags, calendar: calendar)
+        context.insert(next)
+        next.isPriority = entry.isPriority
+        next.repeatRaw = entry.repeatRaw
+        next.seriesID = sid
+        if let due = entry.dueOn {
+            let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: entry.showOn),
+                                               to: calendar.startOfDay(for: due)).day ?? 0
+            next.dueOn = calendar.date(byAdding: .day, value: days, to: showOn)
+        }
+        if let person = entry.person {
+            if entry.link == .to {
+                Review.delegate(next, to: person, now: now)
+            } else {
+                next.person = person
+                next.linkRaw = entry.linkRaw
+            }
+        }
+        for item in entry.checklist ?? [] {
+            let copy = ChecklistItem(text: item.text, order: item.order, createdAt: now)
+            context.insert(copy)
+            copy.entry = next
+        }
+        return next
+    }
+
+    /// Two devices can each spawn the same occurrence. Keeps the oldest of every active
+    /// (series, showOn) group and deletes the rest.
+    public static func dedupe(in context: ModelContext) throws {
+        let entries = try context.fetch(FetchDescriptor<Entry>(predicate: #Predicate { $0.seriesID != nil },
+                                                               sortBy: [SortDescriptor(\.createdAt)]))
+        var seen = Set<String>()
+        for e in entries where e.status.isActive {
+            if !seen.insert("\(e.seriesID!)|\(e.showOn.timeIntervalSince1970)").inserted { context.delete(e) }
+        }
+    }
 }

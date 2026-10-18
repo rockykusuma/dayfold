@@ -89,9 +89,7 @@ public enum PeopleDirectory {
 
     /// Run at launch and whenever the app comes to the foreground.
     public static func tidy(in context: ModelContext) throws {
-        try backfillFromText(in: context)
-        try mergeDuplicates(in: context)
-        try context.save()
+        try Maintenance.tidy(in: context)
     }
 
     /// The `from:` / `to:` token being typed at the end of `text`, if any.

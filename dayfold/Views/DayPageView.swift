@@ -300,7 +300,7 @@ struct DayPageView: View {
     }
 
     private func apply(_ action: ReviewAction, to entry: Entry) {
-        withAnimation(.snappy) { Review.apply(action, to: entry) }
+        withAnimation(.snappy) { Review.apply(action, to: entry, context: context) }
     }
 
     /// Check circle: done ↔ open. On past days only reopening is allowed.
@@ -309,7 +309,7 @@ struct DayPageView: View {
             if !entry.status.isActive {
                 Review.reopen(entry)
             } else if !isPast {
-                Review.apply(.done, to: entry)
+                Review.apply(.done, to: entry, context: context)
             }
         }
     }

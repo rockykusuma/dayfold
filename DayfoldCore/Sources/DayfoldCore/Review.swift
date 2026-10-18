@@ -1,4 +1,5 @@
 import Foundation
+import SwiftData
 
 /// The four choices in the evening Review, one card per active task.
 public enum ReviewAction: Equatable, Sendable {
@@ -66,6 +67,15 @@ public enum Review {
             entry.closedAt = now
         case .nudged:
             entry.nudgedAt = now
+        }
+    }
+
+    /// As `apply`, and a repeating task closed with done/drop gets its next occurrence.
+    public static func apply(_ action: ReviewAction, to entry: Entry, now: Date = Date(),
+                             calendar: Calendar = .current, context: ModelContext) {
+        apply(action, to: entry, now: now, calendar: calendar)
+        if action == .done || action == .drop {
+            Recurrence.spawnNext(from: entry, closedOn: now, now: now, in: context, calendar: calendar)
         }
     }
 

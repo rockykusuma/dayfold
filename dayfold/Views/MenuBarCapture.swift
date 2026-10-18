@@ -5,6 +5,7 @@ import DayfoldCore
 
 /// Menu-bar panel: capture without switching apps. Same CaptureBar (and parser) as the main window.
 struct MenuBarCapture: View {
+    @Environment(\.modelContext) private var context
     @Query(sort: \Entry.createdAt) private var entries: [Entry]
     @FocusState private var focused: Bool
     @Environment(\.openWindow) private var openWindow
@@ -36,7 +37,7 @@ struct MenuBarCapture: View {
                     ForEach(recent) { entry in
                         EntryRow(entry: entry, day: today) {
                             withAnimation(.snappy) {
-                                entry.status.isActive ? Review.apply(.done, to: entry) : Review.reopen(entry)
+                                entry.status.isActive ? Review.apply(.done, to: entry, context: context) : Review.reopen(entry)
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)

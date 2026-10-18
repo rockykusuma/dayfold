@@ -42,8 +42,8 @@ struct DayfoldApp: App {
         }
         .modelContainer(container)
         .onChange(of: scenePhase, initial: true) { _, phase in
-            // Link legacy from: text and merge people duplicated across devices.
-            if phase == .active { try? PeopleDirectory.tidy(in: container.mainContext) }
+            // Link legacy from: text, merge duplicate people, remove duplicate repeats.
+            if phase == .active { try? Maintenance.tidy(in: container.mainContext) }
         }
 
         #if os(macOS)

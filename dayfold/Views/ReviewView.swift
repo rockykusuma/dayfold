@@ -1,9 +1,11 @@
 import SwiftUI
+import SwiftData
 import DayfoldCore
 
 /// Evening Review: one card per active task, four choices each.
 /// The queue is snapshotted on open so "Still going" cards don't come back around.
 struct ReviewView: View {
+    @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
@@ -323,7 +325,7 @@ struct ReviewView: View {
     private func decide(_ action: ReviewAction, _ label: String) {
         guard !finished else { return }
         withAnimation(reduceMotion ? .default : .snappy(duration: 0.3)) {
-            Review.apply(action, to: queue[index])
+            Review.apply(action, to: queue[index], context: context)
             tally[label, default: 0] += 1
             index += 1
         }
