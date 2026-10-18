@@ -56,6 +56,22 @@ enum DemoData {
 
         let note = Entry(text: "Wants more ownership of on-call tooling", kind: .note, createdAt: at(0, 12, 30))
         ctx.insert(note); link(note, priya, .about)
+
+        samples[0].isPriority = true; samples[0].tags = ["hiring"]
+        samples[3].isPriority = true; samples[3].tags = ["release"]
+        samples[5].tags = ["hiring"]
+        samples[4].tags = ["1on1"]
+        for t in ["Run dry-run", "Sign rollback plan", "Notify on-call"] { Checklist.add(t, to: samples[3], in: ctx) }
+        samples[3].sortedChecklist.first?.isDone = true
+
+        let weekly = Entry(text: "Weekly status report", createdAt: at(7, 9, 0))
+        ctx.insert(weekly)
+        weekly.tags = ["reports"]
+        weekly.setRepeat(.weekly)
+        Review.apply(.done, to: weekly, now: at(0, 9, 30), context: ctx)
+        let plants = Entry(text: "Water the plants", scope: .personal, createdAt: at(0, 8, 0))
+        ctx.insert(plants)
+        plants.setRepeat(.daily)
         return container
     }
 }

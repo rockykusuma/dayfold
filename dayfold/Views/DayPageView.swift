@@ -74,6 +74,14 @@ struct DayPageView: View {
             }
             .toolbar { toolbar }
             .sheet(item: $editing) { EntryEditor(entry: $0) }
+            #if DEBUG
+            // `-edit <text prefix>` opens the editor for the first matching entry (screenshots can't tap).
+            .task {
+                let args = CommandLine.arguments
+                guard let i = args.firstIndex(of: "-edit"), i + 1 < args.count else { return }
+                editing = allEntries.first { $0.text.hasPrefix(args[i + 1]) }
+            }
+            #endif
             .navigationDestination(item: $openedPerson) { PersonView(person: $0) }
             .sheet(item: $delegating) { entry in
                 PeoplePicker(title: "Delegate to") { person in

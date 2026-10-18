@@ -100,3 +100,11 @@ long-form journal view. (v0.2–v0.3; see README roadmap.)
   docs/superpowers/specs/2026-10-18-people-delegation-design.md
 - Before the first TestFlight build: deploy the CloudKit schema (Person + new Entry fields)
   to production in the CloudKit Console.
+- 2026-10-19 Find & organise: search (AND tokens, #tag, @person, is: filters), visible tags,
+  checklists (ChecklistItem model), repeating tasks (daily / weekdays / weekly / monthly:<day>;
+  next occurrence spawned on done/drop, never catch-up copies; dedupe on foreground),
+  single-level priority (Priority section above the timeline, starred first in Review).
+  Spec: docs/superpowers/specs/2026-10-19-find-organise-design.md
+- 2026-10-19 `!` and `every:` typed on a note capture are dropped (priority/repeat are tasks-only).
+- Before the first TestFlight build: deploy the CloudKit schema (ChecklistItem + Entry
+  isPriority / repeatRaw / seriesID / checklist) to production in the CloudKit Console.
