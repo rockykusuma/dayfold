@@ -5,8 +5,8 @@ import DayfoldCore
 /// Name, role, team; merge or delete. Saving marks the person as sorted.
 struct PersonEditor: View {
     @Bindable var person: Person
-    /// Called before a merge/delete so the person page can close first.
-    var onRemoved: () -> Void
+    /// Hands a merge/delete to the person page, which runs it after it has closed.
+    var onRemoved: (@escaping () -> Void) -> Void
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @State private var confirmDelete = false
@@ -47,6 +47,7 @@ struct PersonEditor: View {
                         person.isSorted = true
                         dismiss()
                     }
+                    .disabled(blankName)
                 }
             }
             .confirmationDialog("Delete \(person.name)?", isPresented: $confirmDelete, titleVisibility: .visible) {
@@ -62,16 +63,15 @@ struct PersonEditor: View {
                 }
             }
         }
+        .interactiveDismissDisabled(blankName)
         .frame(minWidth: 380, minHeight: 360)
     }
 
-    /// Close this sheet and the person page, then change the store, so no view reads a deleted person.
+    private var blankName: Bool { person.name.trimmingCharacters(in: .whitespaces).isEmpty }
+
+    /// The person page runs the change once it has disappeared, so no view reads a deleted person.
     private func remove(_ change: @escaping () -> Void) {
+        onRemoved(change)
         dismiss()
-        onRemoved()
-        DispatchQueue.main.async {
-            withAnimation { change() }
-            try? context.save()
-        }
     }
 }

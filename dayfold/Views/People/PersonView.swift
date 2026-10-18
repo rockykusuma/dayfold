@@ -6,6 +6,8 @@ import DayfoldCore
 struct PersonView: View {
     @Bindable var person: Person
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var context
+    @State private var pendingRemoval: (() -> Void)?
     @State private var link: PersonLink = .from
     @State private var editing = false
     @FocusState private var captureFocused: Bool
@@ -15,6 +17,14 @@ struct PersonView: View {
     private var isEmpty: Bool { person.owed.isEmpty && person.waiting.isEmpty && person.notes.isEmpty }
 
     var body: some View {
+        if person.isDeleted || person.modelContext == nil {
+            Color.paper
+        } else {
+            content
+        }
+    }
+
+    private var content: some View {
         List {
             header
                 .listRowInsets(EdgeInsets())
@@ -55,7 +65,19 @@ struct PersonView: View {
         #if os(iOS)
         .toolbarTitleDisplayMode(.inline)
         #endif
-        .sheet(isPresented: $editing) { PersonEditor(person: person) { dismiss() } }
+        .sheet(isPresented: $editing) { PersonEditor(person: person) { change in
+            pendingRemoval = change
+            editing = false
+            dismiss()
+        }
+        }
+        .onDisappear {
+            if let change = pendingRemoval {
+                pendingRemoval = nil
+                withAnimation { change() }
+                try? context.save()
+            }
+        }
     }
 
     private var header: some View {
