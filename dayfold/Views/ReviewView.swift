@@ -6,6 +6,7 @@ import DayfoldCore
 struct ReviewView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var queue: [Entry]
     @State private var index = 0
     @State private var tally: [String: Int] = [:]
@@ -20,6 +21,12 @@ struct ReviewView: View {
     }
     private var finished: Bool { index >= queue.count }
 
+    /// Side by side normally; stacked at accessibility text sizes so nothing truncates.
+    private var pairLayout: AnyLayout {
+        typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8))
+                                     : AnyLayout(HStackLayout(spacing: 12))
+    }
+
     init(entries: [Entry]) {
         _queue = State(initialValue: entries)
         _pushDate = State(initialValue: Calendar.current.date(byAdding: .day, value: 1,
@@ -28,18 +35,36 @@ struct ReviewView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 24) {
+            Group {
                 if finished {
-                    summary
+                    summary.padding(20)
                 } else {
-                    progress
-                    stack
-                    actions
+                    ScrollView {
+                        VStack(spacing: 24) {
+                            progress
+                            ZStack {
+                                card(queue[index])
+                                    .id(queue[index].id)
+                                    .transition(reduceMotion
+                                        ? .opacity
+                                        : .asymmetric(insertion: .opacity,
+                                                      removal: .offset(x: -420).combined(with: .opacity)))
+                            }
+                            .padding(.bottom, 28) // room for the cards peeking behind
+                        }
+                        .padding(20)
+                        .readableWidth()
+                    }
+                    .safeAreaInset(edge: .bottom) {
+                        actions
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 12)
+                            .readableWidth()
+                            .background(Color.paper)
+                    }
                 }
             }
-            .padding(20)
-            .frame(maxWidth: 520, maxHeight: .infinity)
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.paper)
             .frame(minWidth: 380, minHeight: 520)
             .navigationTitle("Review")
@@ -70,36 +95,15 @@ struct ReviewView: View {
         .accessibilityElement(children: .combine)
     }
 
-    /// Current card on top, up to two peeking behind it.
-    private var stack: some View {
-        ZStack {
-            ForEach(Array(queue.enumerated()).filter { $0.offset >= index && $0.offset < index + 3 }.reversed(), id: \.element.id) { offset, entry in
-                let depth = offset - index
-                card(entry)
-                    .overlay { // back cards show only their edge, not their text
-                        if depth > 0 { RoundedRectangle(cornerRadius: 24, style: .continuous).fill(Color.card).padding(1) }
-                    }
-                    .scaleEffect(1 - CGFloat(depth) * 0.05, anchor: .bottom)
-                    .offset(y: CGFloat(depth) * 14)
-                    .opacity(depth == 0 ? 1 : 0.6)
-                    .allowsHitTesting(depth == 0)
-                    .accessibilityHidden(depth != 0)
-                    .transition(reduceMotion
-                        ? .opacity
-                        : .asymmetric(insertion: .opacity,
-                                      removal: .offset(x: -420).combined(with: .opacity)))
-            }
-        }
-        .frame(maxHeight: .infinity)
-    }
-
     private func card(_ entry: Entry) -> some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack(spacing: 6) {
-                Image(systemName: entry.scope == .work ? "briefcase" : "house")
-                Text(entry.scope == .work ? "Work" : "Personal")
-                if let from = entry.from, !from.isEmpty { Text("· from \(from)") }
-                Spacer()
+            HStack(alignment: .top) {
+                pairLayout {
+                    Label(entry.scope == .work ? "Work" : "Personal",
+                          systemImage: entry.scope == .work ? "briefcase" : "house")
+                    if let from = entry.from, !from.isEmpty { Text("from \(from)") }
+                }
+                Spacer(minLength: 8)
                 let age = DayPage.age(of: entry, on: today)
                 if age > 0 { AgeBadge(days: age) }
             }
@@ -113,7 +117,7 @@ struct ReviewView: View {
 
             Spacer(minLength: 0)
 
-            HStack(spacing: 12) {
+            pairLayout {
                 Label(entry.createdAt.formatted(.dateTime.weekday(.abbreviated).hour().minute()), systemImage: "clock")
                 if entry.status == .inProgress { Label("In progress", systemImage: "circle.lefthalf.filled") }
                 if let due = entry.dueOn {
@@ -124,10 +128,27 @@ struct ReviewView: View {
             .foregroundStyle(.secondary)
         }
         .padding(24)
-        .frame(maxWidth: .infinity, minHeight: 220, maxHeight: 320, alignment: .topLeading)
+        .frame(maxWidth: .infinity, minHeight: 240, alignment: .topLeading)
         .background(Color.card, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(.separator, lineWidth: 0.5))
         .shadow(color: .black.opacity(0.08), radius: 16, y: 6)
+        .background(alignment: .bottom) { backCards }
+    }
+
+    /// Edges of the next cards, sized to the front card so they always line up.
+    private var backCards: some View {
+        let behind = min(2, queue.count - index - 1)
+        return ZStack {
+            ForEach(Array((1...max(behind, 1)).reversed()), id: \.self) { depth in
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .fill(Color.card)
+                    .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(.separator, lineWidth: 0.5))
+                    .scaleEffect(1 - CGFloat(depth) * 0.05, anchor: .bottom)
+                    .offset(y: CGFloat(depth) * 14)
+                    .opacity(behind > 0 ? 1 - CGFloat(depth) * 0.3 : 0)
+            }
+        }
+        .accessibilityHidden(true)
     }
 
     private var actions: some View {
@@ -139,7 +160,7 @@ struct ReviewView: View {
             .buttonStyle(.borderedProminent)
             .keyboardShortcut(.defaultAction)
 
-            HStack(spacing: 12) {
+            pairLayout {
                 Button { decide(.stillGoing, "still going") } label: {
                     Label("Still going", systemImage: "circle.lefthalf.filled").frame(maxWidth: .infinity, minHeight: 32)
                 }
@@ -180,6 +201,7 @@ struct ReviewView: View {
                     .joined(separator: " · "))
                     .font(.subheadline.monospacedDigit())
                     .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
                     .padding(.top, 4)
             }
             Button { dismiss() } label: { Text("Close").foregroundStyle(Color.paper) }
@@ -219,5 +241,12 @@ struct ReviewView: View {
             tally[label, default: 0] += 1
             index += 1
         }
+    }
+}
+
+private extension View {
+    /// Comfortable column on iPad / Mac windows; full width on phones.
+    func readableWidth() -> some View {
+        frame(maxWidth: 520).frame(maxWidth: .infinity)
     }
 }

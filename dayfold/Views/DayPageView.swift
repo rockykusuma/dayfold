@@ -11,7 +11,11 @@ struct DayPageView: View {
     @State private var day = Calendar.current.startOfDay(for: Date())
     @State private var editing: Entry?
     @State private var showCalendar = false
+    #if DEBUG
+    @State private var showSettings = CommandLine.arguments.contains("-settings")
+    #else
     @State private var showSettings = false
+    #endif
     @Bindable private var reminder = ReviewReminder.shared
     @FocusState private var captureFocused: Bool
 
@@ -162,6 +166,7 @@ struct DayPageView: View {
         .padding(.horizontal, 20)
         .padding(.top, 8)
         .padding(.bottom, 12)
+        .dynamicTypeSize(...DynamicTypeSize.accessibility1) // display text; rows below scale fully
     }
 
     private func dayButton(_ offset: Int, symbol: String, label: String, key: KeyEquivalent) -> some View {

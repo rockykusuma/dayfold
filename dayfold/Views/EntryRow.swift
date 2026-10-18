@@ -8,6 +8,9 @@ struct EntryRow: View {
     var showScope = true
     let onToggle: () -> Void
 
+    @ScaledMetric(relativeTo: .body) private var markSize: CGFloat = 44
+    @Environment(\.dynamicTypeSize) private var typeSize
+
     private var isTask: Bool { entry.kind == .task }
     private var isClosed: Bool { isTask && !entry.status.isActive }
     private var age: Int { DayPage.age(of: entry, on: day) }
@@ -37,7 +40,7 @@ struct EntryRow: View {
                     .font(.title3)
                     .foregroundStyle(isClosed ? AnyShapeStyle(.secondary) : AnyShapeStyle(.tint))
                     .contentTransition(.symbolEffect(.replace))
-                    .frame(width: 44, height: 44)
+                    .frame(width: markSize, height: markSize)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -47,13 +50,16 @@ struct EntryRow: View {
             Image(systemName: "minus")
                 .font(.body.weight(.semibold))
                 .foregroundStyle(.tertiary)
-                .frame(width: 44, height: 44)
+                .frame(width: markSize, height: markSize)
                 .accessibilityLabel("Note")
         }
     }
 
     private var meta: some View {
-        HStack(spacing: 6) {
+        // Wraps into a column at accessibility sizes instead of truncating.
+        let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4))
+                                                  : AnyLayout(HStackLayout(spacing: 6))
+        return layout {
             Text(entry.createdAt, format: .dateTime.hour().minute())
                 .monospacedDigit()
             if showScope {

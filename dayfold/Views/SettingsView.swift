@@ -12,6 +12,7 @@ struct SettingsView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var notifications: UNAuthorizationStatus?
     @State private var iCloud: CKAccountStatus?
+    @ScaledMetric(relativeTo: .subheadline) private var dayCircle: CGFloat = 38
 
     private let calendar = Calendar.current
 
@@ -19,16 +20,11 @@ struct SettingsView: View {
         Form {
             Section {
                 DatePicker("Time", selection: time, displayedComponents: .hourAndMinute)
-                LabeledContent("Days") {
-                    HStack(spacing: 6) {
-                        ForEach(orderedWeekdays, id: \.self) { weekday in
-                            Toggle(calendar.veryShortWeekdaySymbols[weekday - 1], isOn: dayBinding(weekday))
-                                .toggleStyle(.button)
-                                .buttonBorderShape(.circle)
-                                .accessibilityLabel(calendar.weekdaySymbols[weekday - 1])
-                        }
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Days")
+                    HStack(spacing: 2) {
+                        ForEach(orderedWeekdays, id: \.self) { dayButton($0) }
                     }
-                    .font(.footnote.weight(.semibold))
                 }
             } header: {
                 Text("Evening review")
@@ -41,6 +37,14 @@ struct SettingsView: View {
             Section("Notifications") {
                 LabeledContent("Permission") {
                     status(notificationText, ok: notificationsAllowed)
+                }
+                if notifications == .notDetermined {
+                    Button("Turn On Notifications") {
+                        Task {
+                            await ReviewReminder.shared.schedule() // asks for permission, then schedules
+                            await refresh()
+                        }
+                    }
                 }
                 if notifications == .denied {
                     Button("Open System Settings") { openURL(systemSettingsURL) }
@@ -89,16 +93,27 @@ struct SettingsView: View {
         )
     }
 
-    private func dayBinding(_ weekday: Int) -> Binding<Bool> {
+    /// Filled ink circle = on. Full-width hit area per day, at least 44pt tall.
+    private func dayButton(_ weekday: Int) -> some View {
         let digit = Character(String(weekday))
-        return Binding(
-            get: { weekdays.contains(digit) },
-            set: { on in
-                var set = Set(weekdays)
-                if on { set.insert(digit) } else { set.remove(digit) }
-                weekdays = String(set.sorted())
-            }
-        )
+        let on = weekdays.contains(digit)
+        return Button {
+            var set = Set(weekdays)
+            if on { set.remove(digit) } else { set.insert(digit) }
+            weekdays = String(set.sorted())
+        } label: {
+            Text(calendar.veryShortWeekdaySymbols[weekday - 1])
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(on ? Color.paper : Color.primary)
+                .frame(width: dayCircle, height: dayCircle)
+                .background(Circle().fill(on ? Color.accentColor : Color.secondary.opacity(0.12)))
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .animation(.snappy(duration: 0.2), value: on)
+        .accessibilityLabel(calendar.weekdaySymbols[weekday - 1])
+        .accessibilityAddTraits(on ? .isSelected : [])
     }
 
     /// Weekday numbers starting from the locale's first day of the week.

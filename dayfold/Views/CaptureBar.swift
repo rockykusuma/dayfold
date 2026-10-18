@@ -12,6 +12,7 @@ struct CaptureBar: View {
     @State private var text = ""
     @State private var kind: EntryKind = .task
     @State private var saved = 0
+    @ScaledMetric(relativeTo: .body) private var iconBox: CGFloat = 28
     @AppStorage("capture.lastScope") private var lastScopeRaw = EntryScope.work.rawValue
 
     private var scope: EntryScope {
@@ -28,7 +29,7 @@ struct CaptureBar: View {
                         .font(.body.weight(.medium))
                         .foregroundStyle(.tint)
                         .contentTransition(.symbolEffect(.replace))
-                        .frame(width: 28, height: 28)
+                        .frame(width: iconBox, height: iconBox)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -52,7 +53,7 @@ struct CaptureBar: View {
                     } label: {
                         Image(systemName: scope == .work ? "briefcase" : "house")
                             .foregroundStyle(.secondary)
-                            .frame(width: 28, height: 28)
+                            .frame(width: iconBox, height: iconBox)
                     }
                     .menuStyle(.button)
                     .buttonStyle(.plain)
@@ -83,6 +84,7 @@ struct CaptureBar: View {
         .padding(.vertical, 8)
         .background(.bar)
         .overlay(alignment: .top) { Divider() }
+        .dynamicTypeSize(...DynamicTypeSize.accessibility2) // keep room for the page above
     }
 
     private var trimmed: String { text.trimmingCharacters(in: .whitespacesAndNewlines) }
