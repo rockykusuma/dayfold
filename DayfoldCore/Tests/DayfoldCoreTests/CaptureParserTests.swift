@@ -42,4 +42,29 @@ struct CaptureParserTests {
         #expect(p.text == "ping @priya")
         #expect(p.dueOn == nil)
     }
+
+    @Test func extractsTo() {
+        let p = CaptureParser.parse("Q4 capacity numbers to:arjun", now: now, calendar: cal)
+        #expect(p.text == "Q4 capacity numbers")
+        #expect(p.to == "arjun")
+        #expect(p.from == nil)
+    }
+
+    @Test func fromAndToTogether() {
+        let p = CaptureParser.parse("Deck from:meera to:priya_s", now: now, calendar: cal)
+        #expect(p.from == "meera" && p.to == "priya_s")
+    }
+
+    @Test("Trailing punctuation is not part of a name")
+    func trailingPunctuation() {
+        let p = CaptureParser.parse("Ping to:arjun, about from:priya.", now: now, calendar: cal)
+        #expect(p.to == "arjun" && p.from == "priya")
+        #expect(p.text == "Ping about")
+    }
+
+    @Test func emptyToIsKeptAsText() {
+        let p = CaptureParser.parse("walk to: the office", now: now, calendar: cal)
+        #expect(p.to == nil)
+        #expect(p.text == "walk to: the office")
+    }
 }

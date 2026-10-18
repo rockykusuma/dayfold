@@ -4,6 +4,7 @@ import Foundation
 ///
 ///   #personal / #work      → scope
 ///   from:priya             → from
+///   to:arjun               → to (waiting on)
 ///   @tomorrow @fri @2026-10-24 → dueOn
 ///   #anything-else         → tag
 public struct ParsedCapture: Equatable, Sendable {
@@ -12,6 +13,8 @@ public struct ParsedCapture: Equatable, Sendable {
     public var from: String?
     public var dueOn: Date?
     public var tags: [String]
+    /// `to:name` — waiting on this person.
+    public var to: String? = nil
 }
 
 public enum CaptureParser {
@@ -19,6 +22,7 @@ public enum CaptureParser {
     public static func parse(_ input: String, now: Date = Date(), calendar: Calendar = .current) -> ParsedCapture {
         var scope: EntryScope?
         var from: String?
+        var to: String?
         var dueOn: Date?
         var tags: [String] = []
         var kept: [String] = []
@@ -27,7 +31,8 @@ public enum CaptureParser {
             let lower = token.lowercased()
             if lower == "#work" { scope = .work; continue }
             if lower == "#personal" { scope = .personal; continue }
-            if lower.hasPrefix("from:"), token.count > 5 { from = String(token.dropFirst(5)); continue }
+            if lower.hasPrefix("from:"), let name = personName(token.dropFirst(5)) { from = name; continue }
+            if lower.hasPrefix("to:"), let name = personName(token.dropFirst(3)) { to = name; continue }
             if lower.hasPrefix("@"), let date = date(from: String(lower.dropFirst()), now: now, calendar: calendar) {
                 dueOn = date; continue
             }
@@ -35,7 +40,13 @@ public enum CaptureParser {
             kept.append(token)
         }
 
-        return ParsedCapture(text: kept.joined(separator: " "), scope: scope, from: from, dueOn: dueOn, tags: tags)
+        return ParsedCapture(text: kept.joined(separator: " "), scope: scope, from: from, dueOn: dueOn, tags: tags, to: to)
+    }
+
+    /// A person token without trailing punctuation; nil when nothing is left.
+    private static func personName(_ raw: Substring) -> String? {
+        let name = raw.trimmingCharacters(in: CharacterSet(charactersIn: ".,;:!?)"))
+        return name.isEmpty ? nil : name
     }
 
     private static let weekdays = ["sun": 1, "mon": 2, "tue": 3, "wed": 4, "thu": 5, "fri": 6, "sat": 7]
