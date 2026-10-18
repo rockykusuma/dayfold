@@ -32,7 +32,7 @@ struct DayfoldApp: App {
 
     var body: some Scene {
         WindowGroup(id: "main") {
-            DayPageView()
+            RootView()
                 .task {
                     #if DEBUG
                     if DemoData.isEnabled { return }
