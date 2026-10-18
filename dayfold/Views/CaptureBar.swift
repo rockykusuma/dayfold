@@ -170,9 +170,10 @@ struct CaptureBar: View {
     private func save() {
         guard !trimmed.isEmpty else { return }
         let parsed = CaptureParser.parse(trimmed)
+        let kind = entryKind(parsed)
         let entry = Entry(
             text: parsed.text,
-            kind: entryKind(parsed),
+            kind: kind,
             scope: parsed.scope ?? scope,
             createdAt: Date(),
             showOn: Calendar.current.isDateInToday(day) ? nil : day,
@@ -183,6 +184,10 @@ struct CaptureBar: View {
         withAnimation(.snappy) {
             context.insert(entry)
             link(entry, parsed)
+            if kind == .task {
+                entry.isPriority = parsed.isPriority
+                entry.setRepeat(parsed.repeatRule)
+            }
         }
         text = ""
         saved += 1

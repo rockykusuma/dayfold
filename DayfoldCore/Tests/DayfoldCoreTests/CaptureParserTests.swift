@@ -67,4 +67,27 @@ struct CaptureParserTests {
         #expect(p.to == nil)
         #expect(p.text == "walk to: the office")
     }
+
+    @Test func bangMarksPriority() {
+        let p = CaptureParser.parse("Ship deck ! #work", now: now, calendar: cal)
+        #expect(p.isPriority && p.text == "Ship deck")
+        #expect(CaptureParser.parse("Wow!", now: now, calendar: cal).isPriority == false)
+        let w = CaptureParser.parse("!urgent fix", now: now, calendar: cal)
+        #expect(w.isPriority == false && w.text == "!urgent fix")
+    }
+
+    @Test func everyVariants() {
+        func rule(_ s: String) -> RepeatRule? { CaptureParser.parse("x \(s)", now: now, calendar: cal).repeatRule }
+        #expect(rule("every:day") == .daily)
+        #expect(rule("every:weekday") == .weekdays && rule("every:weekdays") == .weekdays)
+        #expect(rule("every:week") == .weekly)
+        #expect(rule("every:month") == .monthly(day: nil))
+        #expect(rule("every:Week,") == .weekly)
+        #expect(CaptureParser.parse("Report every:week", now: now, calendar: cal).text == "Report")
+    }
+
+    @Test func unknownEveryIsKeptAsText() {
+        let p = CaptureParser.parse("stretch every:fortnight every:", now: now, calendar: cal)
+        #expect(p.repeatRule == nil && p.text == "stretch every:fortnight every:")
+    }
 }

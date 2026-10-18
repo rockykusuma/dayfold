@@ -7,6 +7,8 @@ import Foundation
 ///   to:arjun               → to (waiting on)
 ///   @tomorrow @fri @2026-10-24 → dueOn
 ///   #anything-else         → tag
+///   !                      → priority
+///   every:day|weekday|week|month → repeat
 public struct ParsedCapture: Equatable, Sendable {
     public var text: String
     public var scope: EntryScope?
@@ -15,6 +17,17 @@ public struct ParsedCapture: Equatable, Sendable {
     public var tags: [String]
     /// `to:name` — waiting on this person.
     public var to: String? = nil
+    /// A lone `!` token.
+    public var isPriority: Bool = false
+    /// `every:day|weekday|week|month`.
+    public var repeatRule: RepeatRule? = nil
+}
+
+extension StringProtocol {
+    /// Drops trailing `.,;:!?)` so a token like `priya,` or `week.` reads clean.
+    var trimmingTrailingPunctuation: String {
+        trimmingCharacters(in: CharacterSet(charactersIn: ".,;:!?)"))
+    }
 }
 
 public enum CaptureParser {
@@ -25,6 +38,8 @@ public enum CaptureParser {
         var to: String?
         var dueOn: Date?
         var tags: [String] = []
+        var isPriority = false
+        var repeatRule: RepeatRule?
         var kept: [String] = []
 
         for token in input.split(separator: " ", omittingEmptySubsequences: true).map(String.init) {
@@ -36,17 +51,32 @@ public enum CaptureParser {
             if lower.hasPrefix("@"), let date = date(from: String(lower.dropFirst()), now: now, calendar: calendar) {
                 dueOn = date; continue
             }
+            if token == "!" { isPriority = true; continue }
+            if lower.hasPrefix("every:"), let rule = everyRule(lower.dropFirst(6).trimmingTrailingPunctuation) {
+                repeatRule = rule; continue
+            }
             if lower.hasPrefix("#"), token.count > 1 { tags.append(String(token.dropFirst())); continue }
             kept.append(token)
         }
 
-        return ParsedCapture(text: kept.joined(separator: " "), scope: scope, from: from, dueOn: dueOn, tags: tags, to: to)
+        return ParsedCapture(text: kept.joined(separator: " "), scope: scope, from: from, dueOn: dueOn, tags: tags, to: to,
+                             isPriority: isPriority, repeatRule: repeatRule)
     }
 
     /// A person token without trailing punctuation; nil when nothing is left.
     private static func personName(_ raw: Substring) -> String? {
-        let name = raw.trimmingCharacters(in: CharacterSet(charactersIn: ".,;:!?)"))
+        let name = raw.trimmingTrailingPunctuation
         return name.isEmpty ? nil : name
+    }
+
+    private static func everyRule(_ value: String) -> RepeatRule? {
+        switch value {
+        case "day": .daily
+        case "weekday", "weekdays": .weekdays
+        case "week": .weekly
+        case "month": .monthly(day: nil)
+        default: nil
+        }
     }
 
     private static let weekdays = ["sun": 1, "mon": 2, "tue": 3, "wed": 4, "thu": 5, "fri": 6, "sat": 7]
