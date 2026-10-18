@@ -11,6 +11,7 @@ struct DayPageView: View {
     @State private var day = Calendar.current.startOfDay(for: Date())
     @State private var editing: Entry?
     @State private var delegating: Entry?
+    @State private var openedPerson: Person?
     @State private var showCalendar = false
     #if DEBUG
     @State private var showSettings = CommandLine.arguments.contains("-settings")
@@ -41,7 +42,7 @@ struct DayPageView: View {
                     .listRowBackground(Color.clear)
 
                 ForEach(items) { entry in
-                    EntryRow(entry: entry, day: day, showScope: filter == .all) { toggle(entry) }
+                    EntryRow(entry: entry, day: day, showScope: filter == .all) { toggle(entry) } onPerson: { openedPerson = $0 }
                         .listRowInsets(EdgeInsets(top: 0, leading: 8, bottom: 0, trailing: 20))
                         .listRowBackground(Color.clear)
                         .swipeActions(edge: .leading) {
@@ -91,6 +92,7 @@ struct DayPageView: View {
             }
             .toolbar { toolbar }
             .sheet(item: $editing) { EntryEditor(entry: $0) }
+            .navigationDestination(item: $openedPerson) { PersonView(person: $0) }
             .sheet(item: $delegating) { entry in
                 PeoplePicker(title: "Delegate to") { person in
                     withAnimation(.snappy) { Review.delegate(entry, to: person) }
