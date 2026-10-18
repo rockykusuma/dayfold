@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#000000"/><stop offset="1" stop-color="#000000"/>
+    </linearGradient>
+    <filter id="lift" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="22" stdDeviation="26" flood-color="#000" flood-opacity="0.0"/>
+    </filter>
+  </defs>
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+
+  <!-- the page, top-right corner folded -->
+  <path filter="url(#lift)" fill="#E6E6E6"
+        d="M 296 186 H 640 L 770 316 V 804 A 34 34 0 0 1 736 838 H 296 A 34 34 0 0 1 262 804 V 220 A 34 34 0 0 1 296 186 Z"/>
+  <path fill="#9A9A9A" d="M 640 186 V 288 A 28 28 0 0 0 668 316 H 770 Z"/>
+
+  <!-- ○ open task -->
+  <circle cx="356" cy="428" r="33" fill="none" stroke="#3C3C3C" stroke-width="17"/>
+  <rect x="432" y="411" width="236" height="34" rx="17" fill="#3C3C3C"/>
+
+  <!-- ✓ done task -->
+  <circle cx="356" cy="548" r="41.5" fill="#3C3C3C"/>
+  <path d="M 336 549 L 350 563 L 377 533" fill="none" stroke="#E6E6E6" stroke-width="15"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="432" y="531" width="180" height="34" rx="17" fill="#3C3C3C" opacity="0.38"/>
+
+  <!-- – note -->
+  <rect x="331" y="658" width="50" height="20" rx="10" fill="#8A8A8A"/>
+  <rect x="432" y="651" width="214" height="34" rx="17" fill="#3C3C3C"/>
+</svg>
