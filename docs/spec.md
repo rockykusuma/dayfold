@@ -94,3 +94,9 @@ long-form journal view. (v0.2–v0.3; see README roadmap.)
 - 2026-10-18 Push Notifications capability enabled (`aps-environment` development, iOS + macOS).
   Live sync via CloudKit silent pushes verified Mac ↔ iPhone. No refresh button: SwiftData
   has no public "fetch now" API; push is the mechanism.
+- 2026-10-18 People & delegation: Person model (role, optional team) linked one-per-entry
+  via from / to / about; to:name + Delegate action; stale waiting items join evening
+  Review after N days (default 3). iPhone tabs, Mac sidebar. Spec:
+  docs/superpowers/specs/2026-10-18-people-delegation-design.md
+- Before the first TestFlight build: deploy the CloudKit schema (Person + new Entry fields)
+  to production in the CloudKit Console.

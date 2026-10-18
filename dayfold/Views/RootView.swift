@@ -42,7 +42,11 @@ struct RootView: View {
         }
     }
     #else
+    #if DEBUG
+    @State private var tab = CommandLine.arguments.contains("-people") ? 1 : 0
+    #else
     @State private var tab = 0
+    #endif
 
     var body: some View {
         TabView(selection: $tab) {

@@ -6,6 +6,7 @@ Owner drives Xcode; Claude writes code and reviews. Read `docs/spec.md` first.
 ## Layout
 - `dayfold/` — SwiftUI app target (iOS 17 / macOS 14). Synchronized folder: new files are picked up automatically.
 - `dayfold/Views/` — screens. `DayPageView.swift` is the root screen.
+- `dayfold/Views/People/` — people list, person page, person editor, all-waiting.
 - `DayfoldCore/` — local Swift package, **no UI**: `Entry` model, `DayPage` rule, `Review` actions, `CaptureParser`, Swift Testing tests. Language mode 5.
 - `docs/spec.md` — v0.1 spec + decisions log. Append decisions there.
 
@@ -22,7 +23,8 @@ Owner drives Xcode; Claude writes code and reviews. Read `docs/spec.md` first.
 - Debug only: launch with `-demo` for an in-memory sample day (no iCloud, no permission prompt); add `-review` to open Review. `DemoData.swift`.
 
 ## State as of 2026-10-18 night
-- v0.1 screens done: `DayPageView` (header, day nav, scope, swipe/context actions, edit sheet), `ReviewView` (card stack, tally), `SettingsView` (review time + days, notification + iCloud status; Mac ⌘, window, iPhone gear sheet), `ReviewReminder` (scheduled from stored settings; tap opens Review).
-- Builds Debug + Release on macOS + iOS. DayfoldCore tests: run from `DayfoldCore/` with `xcodebuild test -scheme DayfoldCore -destination platform=macOS` (⌘U needs the test target added to the scheme's Test action).
-- Mac menu-bar capture: `Views/MenuBarCapture.swift` (MenuBarExtra, reuses CaptureBar; main window is `WindowGroup(id: "main")`).
-- Not yet: ⌘N capture sheet (⌘N focuses the capture bar instead), global hotkey for the menu-bar panel; notification permission is requested at first launch (consider asking contextually).
+- v0.1 screens done: `DayPageView`, `ReviewView`, `SettingsView`, `ReviewReminder` (see Layout). Mac menu-bar capture: `Views/MenuBarCapture.swift`.
+- People & delegation done: `Person.swift`, `PeopleDirectory.swift`, `PersonPage.swift` (DayfoldCore), `Views/People/*`, `RootView.swift` (iPhone tabs, Mac sidebar). Debug flags: `-demo`, `-review`, `-settings`, `-people`.
+- Before the first TestFlight build: deploy the CloudKit schema (Person + new Entry fields) to production in the CloudKit Console.
+- Builds Debug + Release on macOS + iOS. DayfoldCore tests: run from `DayfoldCore/` with `xcodebuild test -scheme DayfoldCore -destination platform=macOS`.
+- Not yet: ⌘N capture sheet, global hotkey for the menu-bar panel; notification permission is requested at first launch (consider asking contextually).

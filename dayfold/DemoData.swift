@@ -29,6 +29,33 @@ enum DemoData {
         samples.forEach(container.mainContext.insert)
         samples[1].status = .inProgress
         Review.apply(.done, to: samples[5], now: at(0, 16, 0))
+        let ctx = container.mainContext
+        let priya = Person(name: "Priya Sharma", role: .report, team: "Platform")
+        let arjun = Person(name: "Arjun", role: .report, team: "Sync")
+        let sam = Person(name: "Sam K", role: .report, team: "Platform")
+        let meera = Person(name: "Meera", role: .manager)
+        let hr = Person(name: "HR")                     // unsorted
+        [priya, arjun, meera, sam].forEach { $0.isSorted = true }
+        [priya, arjun, sam, meera, hr].forEach(ctx.insert)
+
+        func link(_ e: Entry, _ p: Person, _ l: PersonLink) { e.person = p; e.link = l }
+        link(samples[0], meera, .from)        // Q4 hiring plan, from Meera
+        link(samples[1], arjun, .from)        // Arjun's design doc
+        link(samples[3], priya, .from)        // migration checklist
+        link(samples[5], hr, .from)           // interview feedback (done)
+        link(samples[4], sam, .about)         // 1:1 note about Sam
+
+        let capacity = Entry(text: "Q4 capacity numbers", createdAt: at(6, 10, 0))
+        let syncDoc = Entry(text: "Sync service rollout plan", createdAt: at(1, 15, 0))
+        let vendor = Entry(text: "Vendor security questionnaire", createdAt: at(8, 11, 0))
+        [capacity, syncDoc, vendor].forEach(ctx.insert)
+        Review.delegate(capacity, to: priya, now: at(6, 10, 5))     // stale
+        Review.delegate(syncDoc, to: arjun, now: at(1, 15, 5))      // fresh
+        Review.delegate(vendor, to: arjun, now: at(8, 11, 5))
+        vendor.nudgedAt = at(2, 9, 0)                               // nudged, not yet stale
+
+        let note = Entry(text: "Wants more ownership of on-call tooling", kind: .note, createdAt: at(0, 12, 30))
+        ctx.insert(note); link(note, priya, .about)
         return container
     }
 }
