@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 import DayfoldCore
 
-/// One day page. Today by default; ‹ › and the date picker browse other days.
+/// One day page. Today by default; ‹ › and the date (tap for a calendar) browse other days.
 /// Past days are read-only except reopening a closed task.
 struct DayPageView: View {
     @Environment(\.modelContext) private var context
@@ -10,6 +10,8 @@ struct DayPageView: View {
     @AppStorage("dayPage.scope") private var filter: ScopeFilter = .all
     @State private var day = Calendar.current.startOfDay(for: Date())
     @State private var editing: Entry?
+    @State private var showCalendar = false
+    @State private var showSettings = false
     @Bindable private var reminder = ReviewReminder.shared
     @FocusState private var captureFocused: Bool
 
@@ -26,8 +28,15 @@ struct DayPageView: View {
     var body: some View {
         NavigationStack {
             List {
+                header
+                    .listRowInsets(EdgeInsets())
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+
                 ForEach(items) { entry in
-                    EntryRow(entry: entry, day: day) { toggle(entry) }
+                    EntryRow(entry: entry, day: day, showScope: filter == .all) { toggle(entry) }
+                        .listRowInsets(EdgeInsets(top: 0, leading: 8, bottom: 0, trailing: 20))
+                        .listRowBackground(Color.clear)
                         .swipeActions(edge: .leading) {
                             if entry.kind == .task && !isPast {
                                 Button { toggle(entry) } label: {
@@ -45,70 +54,200 @@ struct DayPageView: View {
                                 Button { apply(.push(to: nextDay), to: entry) } label: {
                                     Label("Tomorrow", systemImage: "arrow.turn.down.right")
                                 }
-                                .tint(.blue)
+                                .tint(.accentColor)
                             }
                         }
                         .contextMenu { menu(for: entry) }
                 }
+
                 if items.isEmpty {
-                    Text(isPast ? "Nothing on this day." : "Nothing yet. Add the first thing someone asked you for.")
-                        .foregroundStyle(.secondary)
+                    emptyState
+                        .listRowSeparator(.hidden)
+                        .listRowBackground(Color.clear)
                 }
             }
+            .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .background(Color.paper)
             .scrollDismissesKeyboard(.interactively)
-            .navigationTitle(isToday ? "Today" : day.formatted(.dateTime.weekday(.wide).day().month(.wide)))
-            .safeAreaInset(edge: .top) { header }
+            #if os(macOS)
+            .navigationTitle("Dayfold")
+            #else
+            .toolbarTitleDisplayMode(.inline)
+            #endif
             .safeAreaInset(edge: .bottom) {
                 if !isPast { CaptureBar(filter: filter, day: day, focus: $captureFocused) }
             }
-            .toolbar {
-                ToolbarItemGroup(placement: .primaryAction) {
-                    Button { reminder.showReview = true } label: {
-                        Label("Review (\(pendingReview.count))", systemImage: "tray.full")
-                    }
-                    .keyboardShortcut("r", modifiers: .command)
-                    .help("Review today's open tasks")
-
-                    Button {
-                        day = today
-                        captureFocused = true
-                    } label: { Label("New", systemImage: "square.and.pencil") }
-                    .keyboardShortcut("n", modifiers: .command)
-                }
-            }
+            .toolbar { toolbar }
             .sheet(item: $editing) { EntryEditor(entry: $0) }
             .sheet(isPresented: $reminder.showReview) { ReviewView(entries: pendingReview) }
+            #if os(iOS)
+            .sheet(isPresented: $showSettings) {
+                NavigationStack {
+                    SettingsView()
+                        .navigationTitle("Settings")
+                        .toolbar {
+                            ToolbarItem(placement: .confirmationAction) { Button("Done") { showSettings = false } }
+                        }
+                }
+            }
+            #endif
         }
     }
 
+    // MARK: Header
+
     private var header: some View {
-        VStack(spacing: 8) {
-            HStack {
-                Button { shift(-1) } label: { Image(systemName: "chevron.left") }
-                    .keyboardShortcut(.leftArrow, modifiers: .command)
-                    .accessibilityLabel("Previous day")
-                Spacer()
-                DatePicker("Day", selection: $day, displayedComponents: .date)
-                    .labelsHidden()
-                if !isToday {
-                    Button("Today") { day = today }
-                        .keyboardShortcut("t", modifiers: .command)
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .center, spacing: 4) {
+                Button { showCalendar = true } label: {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(relativeLabel)
+                            .font(.caption.weight(.semibold))
+                            .textCase(.uppercase)
+                            .tracking(1.2)
+                            .foregroundStyle(isToday ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+                        Text(day, format: dateFormat)
+                            .font(.system(.largeTitle, design: .serif, weight: .semibold))
+                            .contentTransition(.numericText())
+                    }
+                    .contentShape(Rectangle())
                 }
-                Spacer()
-                Button { shift(1) } label: { Image(systemName: "chevron.right") }
-                    .keyboardShortcut(.rightArrow, modifiers: .command)
-                    .accessibilityLabel("Next day")
+                .buttonStyle(.plain)
+                .accessibilityHint("Opens a calendar")
+                .popover(isPresented: $showCalendar) {
+                    DatePicker("Go to day", selection: Binding(
+                        get: { day },
+                        set: { new in withAnimation(.snappy) { day = calendar.startOfDay(for: new) }; showCalendar = false }
+                    ), displayedComponents: .date)
+                    .datePickerStyle(.graphical)
+                    .labelsHidden()
+                    .padding()
+                    .frame(minWidth: 320)
+                    .presentationCompactAdaptation(.popover)
+                }
+
+                Spacer(minLength: 8)
+
+                if !isToday {
+                    Button("Today") { withAnimation(.snappy) { day = today } }
+                        .buttonStyle(.bordered)
+                        .buttonBorderShape(.capsule)
+                        .controlSize(.small)
+                        .keyboardShortcut("t", modifiers: .command)
+                        .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                }
+                dayButton(-1, symbol: "chevron.left", label: "Previous day", key: .leftArrow)
+                dayButton(1, symbol: "chevron.right", label: "Next day", key: .rightArrow)
             }
-            Picker("Scope", selection: $filter) {
+
+            if let progress {
+                HStack(spacing: 10) {
+                    ProgressView(value: Double(progress.done), total: Double(progress.total))
+                        .tint(.accentColor)
+                    Text("\(progress.done) of \(progress.total) done")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                        .contentTransition(.numericText())
+                }
+                .accessibilityElement(children: .combine)
+            }
+
+            Picker("Scope", selection: $filter.animation(.snappy)) {
                 ForEach(ScopeFilter.allCases) { Text($0.title).tag($0) }
             }
             .pickerStyle(.segmented)
             .labelsHidden()
         }
-        .padding(.horizontal)
-        .padding(.vertical, 8)
-        .background(.bar)
+        .padding(.horizontal, 20)
+        .padding(.top, 8)
+        .padding(.bottom, 12)
     }
+
+    private func dayButton(_ offset: Int, symbol: String, label: String, key: KeyEquivalent) -> some View {
+        Button { shift(offset) } label: {
+            Image(systemName: symbol)
+                .font(.body.weight(.semibold))
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.tint)
+        .keyboardShortcut(key, modifiers: .command)
+        .accessibilityLabel(label)
+    }
+
+    private var relativeLabel: String {
+        let weekday = day.formatted(.dateTime.weekday(.wide))
+        if isToday { return "Today · \(weekday)" }
+        if calendar.isDateInYesterday(day) { return "Yesterday · \(weekday)" }
+        if calendar.isDateInTomorrow(day) { return "Tomorrow · \(weekday)" }
+        return weekday
+    }
+
+    private var dateFormat: Date.FormatStyle {
+        calendar.isDate(day, equalTo: today, toGranularity: .year)
+            ? .dateTime.day().month(.wide)
+            : .dateTime.day().month(.wide).year()
+    }
+
+    /// Tasks on this page and how many are done. Nil when there are no tasks.
+    private var progress: (done: Int, total: Int)? {
+        let tasks = items.filter { $0.kind == .task }
+        guard !tasks.isEmpty else { return nil }
+        return (tasks.filter { $0.status == .done }.count, tasks.count)
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "pencil.line")
+                .font(.largeTitle)
+                .foregroundStyle(.tertiary)
+            Text(isPast ? "Nothing on this day" : "A blank page")
+                .font(.system(.title3, design: .serif, weight: .semibold))
+            Text(isPast ? "Nothing was logged or open." : "Add the first thing someone asked you for.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 48)
+    }
+
+    // MARK: Toolbar
+
+    @ToolbarContentBuilder
+    private var toolbar: some ToolbarContent {
+        #if os(iOS)
+        ToolbarItem(placement: .topBarLeading) {
+            Button { showSettings = true } label: { Label("Settings", systemImage: "gearshape") }
+        }
+        #endif
+        ToolbarItemGroup(placement: .primaryAction) {
+            Button { reminder.showReview = true } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: pendingReview.isEmpty ? "tray" : "tray.full")
+                    if !pendingReview.isEmpty {
+                        Text("\(pendingReview.count)").monospacedDigit()
+                    }
+                }
+            }
+            .keyboardShortcut("r", modifiers: .command)
+            .help("Review today's open tasks")
+            .accessibilityLabel("Review, \(pendingReview.count) open")
+
+            #if os(macOS)
+            Button {
+                day = today
+                captureFocused = true
+            } label: { Label("New", systemImage: "square.and.pencil") }
+            .keyboardShortcut("n", modifiers: .command)
+            .help("New entry")
+            #endif
+        }
+    }
+
+    // MARK: Actions
 
     @ViewBuilder
     private func menu(for entry: Entry) -> some View {
@@ -122,8 +261,11 @@ struct DayPageView: View {
             }
         }
         if !isPast {
+            Divider()
             Button("Edit…", systemImage: "pencil") { editing = entry }
-            Button("Delete", systemImage: "trash", role: .destructive) { context.delete(entry) }
+            Button("Delete", systemImage: "trash", role: .destructive) {
+                withAnimation { context.delete(entry) }
+            }
         }
     }
 
@@ -131,16 +273,18 @@ struct DayPageView: View {
     private var nextDay: Date { calendar.date(byAdding: .day, value: 1, to: day) ?? day }
 
     private func shift(_ days: Int) {
-        day = calendar.date(byAdding: .day, value: days, to: calendar.startOfDay(for: day)) ?? day
+        withAnimation(.snappy) {
+            day = calendar.date(byAdding: .day, value: days, to: calendar.startOfDay(for: day)) ?? day
+        }
     }
 
     private func apply(_ action: ReviewAction, to entry: Entry) {
-        withAnimation { Review.apply(action, to: entry) }
+        withAnimation(.snappy) { Review.apply(action, to: entry) }
     }
 
     /// Check circle: done ↔ open. On past days only reopening is allowed.
     private func toggle(_ entry: Entry) {
-        withAnimation {
+        withAnimation(.snappy) {
             if !entry.status.isActive {
                 Review.reopen(entry)
             } else if !isPast {
@@ -158,39 +302,50 @@ private struct EntryEditor: View {
     var body: some View {
         NavigationStack {
             Form {
-                TextField("Text", text: $entry.text, axis: .vertical)
-                    .lineLimit(1...6)
-                Picker("Kind", selection: $entry.kind) {
-                    Text("Task").tag(EntryKind.task)
-                    Text("Note").tag(EntryKind.note)
+                Section {
+                    TextField("Text", text: $entry.text, axis: .vertical)
+                        .lineLimit(1...6)
                 }
-                Picker("Scope", selection: $entry.scope) {
-                    Text("Work").tag(EntryScope.work)
-                    Text("Personal").tag(EntryScope.personal)
+                Section {
+                    Picker("Kind", selection: $entry.kind) {
+                        Text("Task").tag(EntryKind.task)
+                        Text("Note").tag(EntryKind.note)
+                    }
+                    Picker("Scope", selection: $entry.scope) {
+                        Label("Work", systemImage: "briefcase").tag(EntryScope.work)
+                        Label("Personal", systemImage: "house").tag(EntryScope.personal)
+                    }
+                    TextField("From", text: Binding(
+                        get: { entry.from ?? "" },
+                        set: { entry.from = $0.isEmpty ? nil : $0 }
+                    ), prompt: Text("Who asked?"))
                 }
-                TextField("From", text: Binding(
-                    get: { entry.from ?? "" },
-                    set: { entry.from = $0.isEmpty ? nil : $0 }
-                ))
-                Toggle("Due date", isOn: Binding(
-                    get: { entry.dueOn != nil },
-                    set: { entry.dueOn = $0 ? Calendar.current.startOfDay(for: Date()) : nil }
-                ))
-                if let due = entry.dueOn {
-                    DatePicker("Due", selection: Binding(get: { due }, set: { entry.dueOn = $0 }),
-                               displayedComponents: .date)
+                Section {
+                    Toggle("Due date", isOn: Binding(
+                        get: { entry.dueOn != nil },
+                        set: { entry.dueOn = $0 ? Calendar.current.startOfDay(for: Date()) : nil }
+                    ).animation())
+                    if let due = entry.dueOn {
+                        DatePicker("Due", selection: Binding(get: { due }, set: { entry.dueOn = $0 }),
+                                   displayedComponents: .date)
+                    }
                 }
             }
             .formStyle(.grouped)
+            .scrollContentBackground(.hidden)
+            .background(Color.paper)
             .navigationTitle("Edit")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
             }
         }
+        .frame(minWidth: 380, minHeight: 360)
     }
 }
 
+#if DEBUG
 #Preview {
     DayPageView()
-        .modelContainer(for: Entry.self, inMemory: true)
+        .modelContainer(DemoData.container())
 }
+#endif

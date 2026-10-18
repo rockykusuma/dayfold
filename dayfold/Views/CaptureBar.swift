@@ -11,6 +11,7 @@ struct CaptureBar: View {
 
     @State private var text = ""
     @State private var kind: EntryKind = .task
+    @State private var saved = 0
     @AppStorage("capture.lastScope") private var lastScopeRaw = EntryScope.work.rawValue
 
     private var scope: EntryScope {
@@ -18,42 +19,70 @@ struct CaptureBar: View {
     }
 
     var body: some View {
-        VStack(spacing: 8) {
-            HStack(spacing: 8) {
-                Picker("", selection: $kind) {
-                    Image(systemName: "circle").tag(EntryKind.task)
-                    Image(systemName: "text.alignleft").tag(EntryKind.note)
+        HStack(alignment: .bottom, spacing: 8) {
+            HStack(alignment: .center, spacing: 8) {
+                Button {
+                    kind = kind == .task ? .note : .task
+                } label: {
+                    Image(systemName: kind == .task ? "circle" : "minus")
+                        .font(.body.weight(.medium))
+                        .foregroundStyle(.tint)
+                        .contentTransition(.symbolEffect(.replace))
+                        .frame(width: 28, height: 28)
+                        .contentShape(Rectangle())
                 }
-                .pickerStyle(.segmented)
-                .frame(width: 90)
-                .help("Task or note")
+                .buttonStyle(.plain)
+                .accessibilityLabel(kind == .task ? "Task" : "Note")
+                .accessibilityHint("Switches between task and note")
+                .help(kind == .task ? "Task — click for note" : "Note — click for task")
 
-                TextField(kind == .task ? "What did someone ask you for?" : "Write a note…", text: $text, axis: .vertical)
+                TextField(kind == .task ? "What did someone ask you for?" : "Write a note…",
+                          text: $text, axis: .vertical)
                     .textFieldStyle(.plain)
                     .lineLimit(1...4)
                     .focused(focus)
                     .onSubmit(save)
 
-                Button(action: save) {
-                    Image(systemName: "arrow.up.circle.fill").font(.title2)
+                if filter == .all {
+                    Menu {
+                        Picker("Scope", selection: $lastScopeRaw) {
+                            Label("Work", systemImage: "briefcase").tag(EntryScope.work.rawValue)
+                            Label("Personal", systemImage: "house").tag(EntryScope.personal.rawValue)
+                        }
+                    } label: {
+                        Image(systemName: scope == .work ? "briefcase" : "house")
+                            .foregroundStyle(.secondary)
+                            .frame(width: 28, height: 28)
+                    }
+                    .menuStyle(.button)
+                    .buttonStyle(.plain)
+                    .menuIndicator(.hidden)
+                    .fixedSize()
+                    .accessibilityLabel("Scope: \(scope == .work ? "Work" : "Personal")")
                 }
-                .buttonStyle(.plain)
-                .disabled(trimmed.isEmpty)
-                .keyboardShortcut(.return, modifiers: .command)
             }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
+            .background(Color.card, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.separator, lineWidth: 0.5))
 
-            if filter == .all {
-                Picker("Scope", selection: $lastScopeRaw) {
-                    Text("Work").tag(EntryScope.work.rawValue)
-                    Text("Personal").tag(EntryScope.personal.rawValue)
-                }
-                .pickerStyle(.segmented)
-                .frame(maxWidth: 200)
-                .font(.caption)
+            Button(action: save) {
+                Image(systemName: "arrow.up.circle.fill")
+                    .font(.system(size: 30))
+                    .foregroundStyle(trimmed.isEmpty ? AnyShapeStyle(.quaternary) : AnyShapeStyle(.tint))
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .disabled(trimmed.isEmpty)
+            .keyboardShortcut(.return, modifiers: .command)
+            .accessibilityLabel("Add")
+            .sensoryFeedback(.impact(weight: .light), trigger: saved)
         }
-        .padding(12)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
         .background(.bar)
+        .overlay(alignment: .top) { Divider() }
     }
 
     private var trimmed: String { text.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -71,7 +100,8 @@ struct CaptureBar: View {
             from: parsed.from,
             tags: parsed.tags
         )
-        context.insert(entry)
+        withAnimation(.snappy) { context.insert(entry) }
         text = ""
+        saved += 1
     }
 }

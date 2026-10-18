@@ -10,9 +10,18 @@ final class ReviewReminder: NSObject, UNUserNotificationCenterDelegate {
 
     var showReview = false
 
-    /// Weekdays use Calendar numbering: 1 = Sunday … 7 = Saturday. Default 18:30 Mon–Fri.
+    // Settings storage. Weekdays use Calendar numbering (1 = Sunday … 7 = Saturday) as a digit string.
+    static let hourKey = "review.hour", minuteKey = "review.minute", weekdaysKey = "review.weekdays"
+    static let defaultHour = 18, defaultMinute = 30, defaultWeekdays = "23456"
+
+    /// Schedules from the stored settings (default 18:30 Mon–Fri). No weekdays = no reminder.
     /// Safe to call repeatedly: it replaces whatever was scheduled before.
-    func schedule(hour: Int = 18, minute: Int = 30, weekdays: Set<Int> = [2, 3, 4, 5, 6]) async {
+    func schedule() async {
+        let defaults = UserDefaults.standard
+        let hour = defaults.object(forKey: Self.hourKey) as? Int ?? Self.defaultHour
+        let minute = defaults.object(forKey: Self.minuteKey) as? Int ?? Self.defaultMinute
+        let weekdays = Set((defaults.string(forKey: Self.weekdaysKey) ?? Self.defaultWeekdays).compactMap { Int(String($0)) })
+
         let center = UNUserNotificationCenter.current()
         guard (try? await center.requestAuthorization(options: [.alert, .sound])) == true else { return }
 

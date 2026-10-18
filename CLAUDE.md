@@ -16,7 +16,12 @@ Owner drives Xcode; Claude writes code and reviews. Read `docs/spec.md` first.
 - Container `iCloud.com.rockykusuma.dayfold`, bundle id `com.rockykusuma.dayfold.app`. Push Notifications capability is on (CloudKit silent pushes drive live sync); no APNs certificates needed.
 - Don't commit `xcuserdata`. Don't run `swift test` outside Xcode for the package (SwiftData is Apple-only); use ⌘U on the `DayfoldCore` scheme.
 
+## Design
+- Calm journal look, all native: ink accent (`AccentColor`), `Paper` background, `Card` surfaces — asset-catalog colors with dark variants (`Color.paper`, `Color.card`). Serif (`design: .serif`) for dates, Review card text, empty states; system font elsewhere.
+- Bullet marks: ○ task (44pt tap target), – note. Age pill turns amber at 3+ days. Haptics via `.sensoryFeedback`; animations `.snappy`, respect Reduce Motion.
+- Debug only: launch with `-demo` for an in-memory sample day (no iCloud, no permission prompt); add `-review` to open Review. `DemoData.swift`.
+
 ## State as of 2026-10-18 night
-- Today screen done: `Views/DayPageView.swift` (day nav ‹ › ⌘←/⌘→, date picker, scope toggle, swipe + context actions, edit sheet), `Views/ReviewView.swift` (card stack, four actions, progress; opened via toolbar / ⌘R). `ContentView` deleted; app launches `DayPageView`.
-- Builds on macOS + iOS Simulator; DayfoldCore tests pass (run from `DayfoldCore/`: `xcodebuild test -scheme DayfoldCore -destination platform=macOS`).
-- Not yet written: notification scheduling (default 18:30 weekdays, tap opens Review), Settings, Mac menu-bar capture item.
+- v0.1 screens done: `DayPageView` (header, day nav, scope, swipe/context actions, edit sheet), `ReviewView` (card stack, tally), `SettingsView` (review time + days, notification + iCloud status; Mac ⌘, window, iPhone gear sheet), `ReviewReminder` (scheduled from stored settings; tap opens Review).
+- Builds Debug + Release on macOS + iOS. DayfoldCore tests: run from `DayfoldCore/` with `xcodebuild test -scheme DayfoldCore -destination platform=macOS` (⌘U needs the test target added to the scheme's Test action).
+- Not yet: Mac menu-bar capture item / ⌘N capture sheet; notification permission is requested at first launch (consider asking contextually).
