@@ -7,6 +7,8 @@ struct EntryRow: View {
     let day: Date
     var showScope = true
     let onToggle: () -> Void
+    /// Tapping the person's name (e.g. open their page). Nil = plain text.
+    var onPerson: ((Person) -> Void)? = nil
 
     @ScaledMetric(relativeTo: .body) private var markSize: CGFloat = 44
     @Environment(\.dynamicTypeSize) private var typeSize
@@ -34,7 +36,17 @@ struct EntryRow: View {
 
     @ViewBuilder
     private var mark: some View {
-        if isTask {
+        if entry.isWaiting {
+            Button(action: onToggle) {
+                Image(systemName: "arrow.forward.circle")
+                    .font(.title3)
+                    .foregroundStyle(.orange)
+                    .frame(width: markSize, height: markSize)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Got it — mark delivered")
+        } else if isTask {
             Button(action: onToggle) {
                 Image(systemName: statusSymbol)
                     .font(.title3)
@@ -66,7 +78,9 @@ struct EntryRow: View {
                 Image(systemName: entry.scope == .work ? "briefcase" : "house")
                     .accessibilityLabel(entry.scope == .work ? "Work" : "Personal")
             }
-            if let from = entry.from, !from.isEmpty {
+            if let person = entry.person, let link = entry.link {
+                personName(person, waiting: link == .to)
+            } else if let from = entry.from, !from.isEmpty {
                 Text("· \(from)")
             }
             if let due = entry.dueOn {
@@ -75,12 +89,25 @@ struct EntryRow: View {
             if isTask && entry.status == .inProgress {
                 Text("· in progress")
             }
-            if isTask && entry.status.isActive && age > 0 {
-                AgeBadge(days: age)
+            if isTask && entry.status.isActive {
+                let days = entry.isWaiting ? Review.waitingDays(entry, on: day) : age
+                if days > 0 { AgeBadge(days: days) }
             }
         }
         .font(.caption)
         .foregroundStyle(.secondary)
+    }
+
+    @ViewBuilder
+    private func personName(_ person: Person, waiting: Bool) -> some View {
+        let label = Text(waiting ? "· ⇢ \(person.name)" : "· \(person.name)")
+        if let onPerson {
+            Button { onPerson(person) } label: { label.underline() }
+                .buttonStyle(.plain)
+                .accessibilityHint("Opens \(person.name)")
+        } else {
+            label
+        }
     }
 
     private var statusSymbol: String {

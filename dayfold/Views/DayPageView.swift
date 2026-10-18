@@ -10,6 +10,7 @@ struct DayPageView: View {
     @AppStorage("dayPage.scope") private var filter: ScopeFilter = .all
     @State private var day = Calendar.current.startOfDay(for: Date())
     @State private var editing: Entry?
+    @State private var delegating: Entry?
     @State private var showCalendar = false
     #if DEBUG
     @State private var showSettings = CommandLine.arguments.contains("-settings")
@@ -45,7 +46,7 @@ struct DayPageView: View {
                             if entry.kind == .task && !isPast {
                                 Button { toggle(entry) } label: {
                                     entry.status.isActive
-                                        ? Label("Done", systemImage: "checkmark")
+                                        ? Label(entry.isWaiting ? "Got it" : "Done", systemImage: "checkmark")
                                         : Label("Reopen", systemImage: "arrow.uturn.backward")
                                 }
                                 .tint(.green)
@@ -59,6 +60,10 @@ struct DayPageView: View {
                                     Label("Tomorrow", systemImage: "arrow.turn.down.right")
                                 }
                                 .tint(.accentColor)
+                                if !entry.isWaiting {
+                                    Button { delegating = entry } label: { Label("Delegate", systemImage: "person.crop.circle.badge.arrow.forward") }
+                                        .tint(.orange)
+                                }
                             }
                         }
                         .contextMenu { menu(for: entry) }
@@ -84,6 +89,11 @@ struct DayPageView: View {
             }
             .toolbar { toolbar }
             .sheet(item: $editing) { EntryEditor(entry: $0) }
+            .sheet(item: $delegating) { entry in
+                PeoplePicker(title: "Delegate to") { person in
+                    withAnimation(.snappy) { Review.delegate(entry, to: person) }
+                }
+            }
             .sheet(isPresented: $reminder.showReview) { ReviewView(entries: pendingReview) }
             #if os(iOS)
             .sheet(isPresented: $showSettings) {
@@ -263,6 +273,8 @@ struct DayPageView: View {
                 Button("Done", systemImage: "checkmark") { apply(.done, to: entry) }
                 Button("Push to Tomorrow", systemImage: "arrow.turn.down.right") { apply(.push(to: nextDay), to: entry) }
                 Button("Drop", systemImage: "xmark") { apply(.drop, to: entry) }
+                Button(entry.isWaiting ? "Delegate to Someone Else…" : "Delegate to…",
+                       systemImage: "person.crop.circle.badge.arrow.forward") { delegating = entry }
             }
         }
         if !isPast {
