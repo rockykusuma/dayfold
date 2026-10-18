@@ -158,6 +158,9 @@ struct ReviewView: View {
                 if let due = entry.dueOn {
                     Label(due.formatted(.dateTime.day().month(.abbreviated)), systemImage: "calendar")
                 }
+                if entry.isPriority { Label("Priority", systemImage: "star.fill") }
+                if let rule = entry.repeatRule { Label(rule.title, systemImage: "repeat") }
+                if let p = entry.checklistProgress { Label("\(p.done)/\(p.total)", systemImage: "checklist") }
             }
             .font(.caption)
             .foregroundStyle(.secondary)

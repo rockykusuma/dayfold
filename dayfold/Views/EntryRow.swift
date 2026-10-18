@@ -78,6 +78,15 @@ struct EntryRow: View {
                 Image(systemName: entry.scope == .work ? "briefcase" : "house")
                     .accessibilityLabel(entry.scope == .work ? "Work" : "Personal")
             }
+            if entry.isPriority {
+                Image(systemName: "star.fill")
+                    .foregroundStyle(.tint)
+                    .accessibilityLabel("Priority")
+            }
+            if let rule = entry.repeatRule {
+                Image(systemName: "repeat")
+                    .accessibilityLabel(rule.summary)
+            }
             if let person = entry.person, let link = entry.link {
                 personName(person, waiting: link == .to)
             } else if let from = entry.from, !from.isEmpty {
@@ -85,6 +94,19 @@ struct EntryRow: View {
             }
             if let due = entry.dueOn {
                 Text("· \(Image(systemName: "calendar")) \(due.formatted(.dateTime.day().month(.abbreviated)))")
+            }
+            if let p = entry.checklistProgress {
+                Text("\(Image(systemName: "checklist")) \(p.done)/\(p.total)")
+                    .accessibilityLabel("\(p.done) of \(p.total) checklist items done")
+            }
+            ForEach(entry.tags.prefix(2), id: \.self) { tag in
+                Button { SearchRouter.shared.show("#\(tag)") } label: { Text("#\(tag)") }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Tag \(tag)")
+                    .accessibilityHint("Searches this tag")
+            }
+            if entry.tags.count > 2 {
+                Text("+\(entry.tags.count - 2)")
             }
             if isTask && entry.status == .inProgress {
                 Text("· in progress")
