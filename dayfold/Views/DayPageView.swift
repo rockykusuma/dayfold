@@ -64,7 +64,7 @@ struct DayPageView: View {
                                 }
                                 .tint(.accentColor)
                                 if !entry.isWaiting {
-                                    Button { delegating = entry } label: { Label("Delegate", systemImage: "person.crop.circle.badge.arrow.forward") }
+                                    Button { delegating = entry } label: { Label("Delegate", systemImage: "person.fill.turn.right") }
                                         .tint(.orange)
                                 }
                             }
@@ -278,7 +278,7 @@ struct DayPageView: View {
                 Button("Push to Tomorrow", systemImage: "arrow.turn.down.right") { apply(.push(to: nextDay), to: entry) }
                 Button("Drop", systemImage: "xmark") { apply(.drop, to: entry) }
                 Button(entry.isWaiting ? "Delegate to Someone Else…" : "Delegate to…",
-                       systemImage: "person.crop.circle.badge.arrow.forward") { delegating = entry }
+                       systemImage: "person.fill.turn.right") { delegating = entry }
             }
         }
         if !isPast {
