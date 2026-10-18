@@ -32,13 +32,15 @@ struct MenuBarCapture: View {
             CaptureBar(filter: .all, day: Date(), focus: $focused)
 
             if !recent.isEmpty {
-                VStack(spacing: 0) {
+                VStack(alignment: .leading, spacing: 0) {
                     ForEach(recent) { entry in
                         EntryRow(entry: entry, day: today) {
                             withAnimation(.snappy) {
                                 entry.status.isActive ? Review.apply(.done, to: entry) : Review.reopen(entry)
                             }
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.leading, 4)
                         .padding(.trailing, 16)
                     }
                 }
