@@ -8,8 +8,14 @@ struct EntryEditor: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var context
     @State private var changingPerson = false
-    @State private var tagsText = ""
+    @State private var tagsText: String
     @State private var newItem = ""
+    @FocusState private var addFocused: Bool
+
+    init(entry: Entry) {
+        self.entry = entry
+        _tagsText = State(initialValue: entry.tags.joined(separator: " "))
+    }
 
     var body: some View {
         NavigationStack {
@@ -73,7 +79,7 @@ struct EntryEditor: View {
                         .onChange(of: tagsText) { entry.tags = Tags.parse(tagsText) }
                 }
                 if entry.kind == .task {
-                    Section("Checklist") {
+                    Section {
                         ForEach(entry.sortedChecklist) { item in
                             HStack {
                                 Button {
@@ -95,17 +101,26 @@ struct EntryEditor: View {
                         .onMove { Checklist.move(in: entry, from: $0, to: $1) }
                         TextField("Add item", text: $newItem)
                             .frame(minHeight: 44)
+                            .focused($addFocused)
                             .onSubmit {
                                 Checklist.add(newItem, to: entry, in: context)
                                 newItem = ""
+                                addFocused = true
                             }
+                    } header: {
+                        HStack {
+                            Text("Checklist")
+                            #if os(iOS)
+                            Spacer()
+                            if entry.sortedChecklist.count >= 2 { EditButton() }
+                            #endif
+                        }
                     }
                 }
             }
             .formStyle(.grouped)
             .scrollContentBackground(.hidden)
             .background(Color.paper)
-            .onAppear { tagsText = entry.tags.joined(separator: " ") }
             .onChange(of: entry.kind) {
                 if entry.kind == .note {
                     entry.setRepeat(nil)
@@ -114,7 +129,10 @@ struct EntryEditor: View {
             }
             .navigationTitle("Edit")
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) { Button("Done") {
+                    Checklist.add(newItem, to: entry, in: context)
+                    dismiss()
+                }  }
             }
             .sheet(isPresented: $changingPerson) {
                 PeoplePicker(title: "Change person") { picked in
