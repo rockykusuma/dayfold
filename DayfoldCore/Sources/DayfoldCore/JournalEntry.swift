@@ -41,8 +41,8 @@ public final class JournalEntry {
     public var preview: String {
         let t = title.trimmingCharacters(in: .whitespacesAndNewlines)
         if !t.isEmpty { return t }
-        return text.split(whereSeparator: \.isNewline).first
-            .map { $0.trimmingCharacters(in: .whitespaces) } ?? ""
+        return text.split(whereSeparator: \.isNewline)
+            .map { $0.trimmingCharacters(in: .whitespaces) }.first { !$0.isEmpty } ?? ""
     }
 }
 
@@ -88,9 +88,10 @@ public enum Journal {
     /// collapse in `dedupe`), then the note is deleted. Does not save.
     public static func migrateDayNotes(calendar: Calendar = .current, in context: ModelContext) throws {
         for note in try context.fetch(FetchDescriptor<DayNote>()) {
+            defer { context.delete(note) }
+            guard !note.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { continue }
             context.insert(JournalEntry(id: note.id, date: evening(of: note.day, calendar), text: note.text,
                                         isReflection: true, createdAt: note.updatedAt, updatedAt: note.updatedAt))
-            context.delete(note)
         }
     }
 
@@ -101,7 +102,7 @@ public enum Journal {
         var survivors: [JournalEntry] = []
         for group in Dictionary(grouping: try context.fetch(FetchDescriptor<JournalEntry>()), by: \.id).values {
             let keeper = group.max { $0.updatedAt < $1.updatedAt }!
-            group.filter { $0 !== keeper }.forEach(context.delete)
+            for loser in group where loser !== keeper { absorb(loser, into: keeper, in: context) }
             survivors.append(keeper)
         }
         let byDay = Dictionary(grouping: survivors.filter(\.isReflection)) { calendar.startOfDay(for: $0.date) }
@@ -111,8 +112,21 @@ public enum Journal {
             for t in ordered.map(\.text) where !t.isEmpty && !texts.contains(t) { texts.append(t) }
             ordered[0].text = texts.joined(separator: "\n")
             ordered[0].updatedAt = ordered.last!.updatedAt
-            ordered.dropFirst().forEach(context.delete)
+            for loser in ordered.dropFirst() { absorb(loser, into: ordered[0], in: context) }
         }
+    }
+
+    /// Deletes `loser` but keeps its photos (after the keeper's), bookmark and title.
+    private static func absorb(_ loser: JournalEntry, into keeper: JournalEntry, in context: ModelContext) {
+        var next = (keeper.sortedPhotos.last?.order ?? -1) + 1
+        for photo in loser.sortedPhotos {
+            photo.entry = keeper
+            photo.order = next
+            next += 1
+        }
+        keeper.isBookmarked = keeper.isBookmarked || loser.isBookmarked
+        if keeper.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { keeper.title = loser.title }
+        context.delete(loser)
     }
 
     private static func evening(of day: Date, _ calendar: Calendar) -> Date {

@@ -36,6 +36,8 @@ struct JournalTests {
         #expect(e.sortedPhotos.map(\.order) == [1, 2])
         e.text = "Line one\nLine two"
         #expect(e.preview == "Line one")
+        e.text = "  \nfoo"
+        #expect(e.preview == "foo")
         e.title = "Title"
         #expect(e.preview == "Title")
     }
@@ -134,5 +136,37 @@ struct JournalTests {
         let all = try entries()
         #expect(Set(all.map(\.id)).count == all.count)
         #expect(all.count == 2)
+    }
+
+    @Test func dedupeKeepsPhotos() throws {
+        let id = UUID()
+        let keeper = JournalEntry(id: id, text: "new", updatedAt: at(2026,10,19,22))
+        let loser = JournalEntry(id: id, text: "old", updatedAt: at(2026,10,19,20))
+        context.insert(keeper); context.insert(loser)
+        photo(0, to: loser)
+        try Journal.dedupe(calendar: ist, in: context)
+        try context.save()
+        let all = try entries()
+        #expect(all.count == 1)
+        #expect(all[0].sortedPhotos.count == 1)
+        #expect(try context.fetch(FetchDescriptor<JournalPhoto>()).count == 1)
+    }
+
+    @Test func dedupeReflectionsKeepBookmark() throws {
+        context.insert(JournalEntry(date: at(2026,10,19,21), text: "A", isReflection: true, updatedAt: at(2026,10,19,20)))
+        context.insert(JournalEntry(date: at(2026,10,19,21), title: "T", text: "B", isBookmarked: true,
+                                    isReflection: true, updatedAt: at(2026,10,19,22)))
+        try Journal.dedupe(calendar: ist, in: context)
+        let all = try entries()
+        #expect(all.count == 1)
+        #expect(all[0].isBookmarked)
+        #expect(all[0].title == "T")
+    }
+
+    @Test func migrateSkipsBlank() throws {
+        context.insert(DayNote(day: at(2026,10,18), text: " \n", updatedAt: at(2026,10,18,22), calendar: ist))
+        try Journal.migrateDayNotes(calendar: ist, in: context)
+        #expect(try entries().isEmpty)
+        #expect(try context.fetch(FetchDescriptor<DayNote>()).isEmpty)
     }
 }
