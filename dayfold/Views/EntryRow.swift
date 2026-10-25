@@ -6,6 +6,8 @@ struct EntryRow: View {
     let entry: Entry
     let day: Date
     var showScope = true
+    /// Week page Done rows: weekday closed instead of time created, no person, no strikethrough.
+    var lookBack = false
     let onToggle: () -> Void
     /// Tapping the person's name (e.g. open their page). Nil = plain text.
     var onPerson: ((Person) -> Void)? = nil
@@ -27,8 +29,8 @@ struct EntryRow: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(entry.text)
-                    .strikethrough(isClosed, color: .secondary)
-                    .foregroundStyle(isClosed ? .secondary : .primary)
+                    .strikethrough(isClosed && !lookBack, color: .secondary)
+                    .foregroundStyle(isClosed && !lookBack ? .secondary : .primary)
                     .fixedSize(horizontal: false, vertical: true)
 
                 meta
@@ -76,8 +78,12 @@ struct EntryRow: View {
         let layout = typeSize.isAccessibilitySize ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4))
                                                   : AnyLayout(HStackLayout(spacing: 6))
         return layout {
-            Text(entry.createdAt, format: .dateTime.hour().minute())
-                .monospacedDigit()
+            if lookBack, let closed = entry.closedAt {
+                Text(closed, format: .dateTime.weekday(.abbreviated))
+            } else {
+                Text(entry.createdAt, format: .dateTime.hour().minute())
+                    .monospacedDigit()
+            }
             if showScope {
                 Image(systemName: entry.scope == .work ? "briefcase" : "house")
                     .accessibilityLabel(entry.scope == .work ? "Work" : "Personal")
@@ -91,7 +97,9 @@ struct EntryRow: View {
                 Image(systemName: "repeat")
                     .accessibilityLabel(rule.summary)
             }
-            if let person = entry.person, let link = entry.link {
+            if lookBack {
+                EmptyView()
+            } else if let person = entry.person, let link = entry.link {
                 personName(person, waiting: link == .to)
             } else if let from = entry.from, !from.isEmpty {
                 Text("· \(from)")

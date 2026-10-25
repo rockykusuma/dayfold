@@ -127,3 +127,6 @@ long-form journal view. (v0.2–v0.3; see README roadmap.)
   never in the update text. Same-day notes from two devices are merged by `Maintenance.tidy`. No streaks,
   scores or percentages. Spec: docs/superpowers/specs/2026-10-25-journal-insights-design.md
 - Before the first TestFlight build: deploy the CloudKit schema (DayNote) to production in the CloudKit Console.
+- 2026-10-25 Update text (Share/Copy) lists work-scoped entries only; the Week page itself shows everything.
+- 2026-10-25 Week page browses by a week offset from now (not a stored date), so it stays correct across midnight.
+- 2026-10-25 Recommend First Day of Week = Monday (Language & Region) on iPhone and Mac; the week follows the locale.

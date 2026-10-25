@@ -36,3 +36,4 @@ Owner drives Xcode; Claude writes code and reviews. Read `docs/spec.md` first.
 - Capture everywhere done: one Core path (`Capture.add` / `addLines`), ⌘N, list paste/drop, Siri/Shortcuts, Mac hotkey panel, Services "Add to Dayfold". Spec: docs/superpowers/specs/2026-10-25-capture-everywhere-design.md
 - Owner checks pending: hotkey panel focus (toggle twice, click-away), Siri/Shortcuts run, Services menu appears (run `/System/Library/CoreServices/pbs -update` if not), ⌘N from Search/People and with the window minimized, pasting a Windows (CRLF) list; hotkey default is ⌃⌥D.
 - Not yet: month view / calendar heat map, share extension and widgets (need targets + App Group); notification permission is requested at first launch (consider asking contextually).
+- Owner checks pending: set First Day of Week to Monday on iPhone and Mac (Language & Region) so the Week page and update title start on Monday.

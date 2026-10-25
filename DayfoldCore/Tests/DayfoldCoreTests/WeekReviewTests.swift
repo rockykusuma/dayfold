@@ -143,6 +143,14 @@ struct WeekReviewTests {
         #expect(text == "Week of 11 Oct\nDone (1)\n• Ship it")
     }
 
+    @Test func summarySkipsPersonal() {
+        let home = done("Book dentist", at(2026, 10, 20, 10)); home.scope = .personal
+        let work = done("Send deck", at(2026, 10, 21, 10))
+        let stuck = open("Fix gutter", created: at(2026, 10, 17, 9)); stuck.scope = .personal
+        let text = week([home, work, stuck]).summaryText(title: "Week of 19 Oct", calendar: ist)
+        #expect(text == "Week of 19 Oct\nDone (1)\n• Send deck")
+    }
+
     @Test func yearBoundary() {
         let a = done("a", at(2026, 12, 31, 10)), b = done("b", at(2027, 1, 2, 10))
         let w = week([a, b], containing: at(2026, 12, 29, 12))

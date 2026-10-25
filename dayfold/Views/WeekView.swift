@@ -9,8 +9,8 @@ struct WeekView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query(sort: \Entry.createdAt) private var entries: [Entry]
     @Query private var notes: [DayNote]
-    /// Any date in the shown week.
-    @State private var anchor = Date()
+    /// Weeks back from now (0 = this week).
+    @State private var weekOffset = 0
     @State private var editing: Entry?
     @State private var openedPerson: Person?
     @State private var noteDay: NoteDay?
@@ -18,6 +18,7 @@ struct WeekView: View {
 
     private let calendar = Calendar.current
     private var today: Date { calendar.startOfDay(for: Date()) }
+    private var anchor: Date { calendar.date(byAdding: .day, value: 7 * weekOffset, to: Date()) ?? Date() }
     private var motion: Animation? { reduceMotion ? nil : .snappy }
 
     var body: some View {
@@ -35,7 +36,7 @@ struct WeekView: View {
                     .listRowBackground(Color.clear)
             }
             if !review.done.isEmpty {
-                Section { groups(review.done) } header: { sectionHeader("Done") }
+                Section { groups(review.done, lookBack: true) } header: { sectionHeader("Done") }
             }
             if !review.stuck.isEmpty {
                 Section {
@@ -106,7 +107,7 @@ struct WeekView: View {
                 }
                 Spacer(minLength: 8)
                 if !review.isCurrent {
-                    Button("This week") { withAnimation(motion) { anchor = Date() } }
+                    Button("This week") { withAnimation(motion) { weekOffset = 0 } }
                         .buttonStyle(.bordered)
                         .buttonBorderShape(.capsule)
                         .controlSize(.small)
@@ -131,7 +132,7 @@ struct WeekView: View {
 
     private func weekButton(_ direction: Int, symbol: String, label: String, key: KeyEquivalent) -> some View {
         Button {
-            withAnimation(motion) { anchor = calendar.date(byAdding: .day, value: 7 * direction, to: anchor) ?? anchor }
+            withAnimation(motion) { weekOffset += direction }
         } label: {
             Image(systemName: symbol)
                 .font(.body.weight(.semibold))
@@ -167,7 +168,7 @@ struct WeekView: View {
     // MARK: Rows
 
     /// Per-person sub-header, then that person's rows.
-    @ViewBuilder private func groups(_ groups: [PersonGroup]) -> some View {
+    @ViewBuilder private func groups(_ groups: [PersonGroup], lookBack: Bool = false) -> some View {
         ForEach(groups) { group in
             Group {
                 if let person = group.person {
@@ -182,7 +183,7 @@ struct WeekView: View {
             .listRowSeparator(.hidden)
             .listRowBackground(Color.clear)
             .accessibilityAddTraits(.isHeader)
-            ForEach(group.entries) { row($0) }
+            ForEach(group.entries) { row($0, lookBack: lookBack) }
         }
     }
 
@@ -194,8 +195,8 @@ struct WeekView: View {
             .contentShape(Rectangle())
     }
 
-    private func row(_ entry: Entry) -> some View {
-        EntryRow(entry: entry, day: today, onToggle: { toggle(entry) }, onPerson: { openedPerson = $0 })
+    private func row(_ entry: Entry, lookBack: Bool = false) -> some View {
+        EntryRow(entry: entry, day: today, lookBack: lookBack, onToggle: { toggle(entry) }, onPerson: { openedPerson = $0 })
             .contentShape(Rectangle())
             .onTapGesture { editing = entry }
             .accessibilityAction(named: "Edit") { editing = entry }
