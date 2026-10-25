@@ -2,13 +2,18 @@ import SwiftUI
 import SwiftData
 import DayfoldCore
 
-/// iPhone: Today, People, Search, Journal and Notes tabs. Mac: sidebar with Today, Journal, Notes, People, teams, and All waiting.
+/// iPhone: Today, People, Search, Journal and Notes tabs. Mac: sidebar with Today, Journal, Notes, People, the page tree, teams, and All waiting.
 struct RootView: View {
     #if os(macOS)
-    enum SidebarItem: Hashable { case today, journal, notes, people, team(String), waiting, search, tag(String) }
+    enum SidebarItem: Hashable { case today, journal, notes, people, team(String), waiting, search, tag(String), page(NotePage) }
 
     @Query(sort: \Person.name) private var people: [Person]
     @Query(sort: \Entry.createdAt) private var entries: [Entry]
+    @Query private var pages: [NotePage]
+    @Environment(\.modelContext) private var context
+    @AppStorage("sidebarPagesExpanded") private var pagesExpanded = true
+    /// A page made with the sidebar "+": opens in edit mode the first time it's shown.
+    @State private var newPage: NotePage?
     #if DEBUG
     @State private var selection: SidebarItem? = CommandLine.arguments.contains("-search") ? .search
         : CommandLine.arguments.contains("-notes") ? .notes
@@ -26,6 +31,25 @@ struct RootView: View {
                 Label("Notes", systemImage: "books.vertical").tag(SidebarItem.notes)
                 Label("People", systemImage: "person.2").tag(SidebarItem.people)
                 Label("Search", systemImage: "magnifyingglass").tag(SidebarItem.search)
+                Section(isExpanded: $pagesExpanded) {
+                    // Pinned first, then the top-level tree; pinned subpages also show under their parent.
+                    let live = pages.filter { !$0.isDeleted }
+                    OutlineGroup(Pages.sorted(live.filter(\.isPinned)) + Pages.sorted(live.filter { $0.parent == nil && !$0.isPinned }),
+                                 children: \.outlineChildren) { page in
+                        Label(page.displayTitle, systemImage: page.isPinned ? "pin" : "doc.text")
+                            .lineLimit(1)
+                            .tag(SidebarItem.page(page))
+                    }
+                } header: {
+                    HStack {
+                        Text("Pages")
+                        Spacer()
+                        Button(action: addPage) { Image(systemName: "plus") }
+                            .buttonStyle(.plain)
+                            .help("New Page")
+                            .accessibilityLabel("New Page")
+                    }
+                }
                 let tags = Tags.all(entries)
                 if !tags.isEmpty {
                     Section("Tags") {
@@ -55,6 +79,9 @@ struct RootView: View {
             case .team(let team): NavigationStack { PeopleListView(team: team) }.id(team)
             case .waiting: NavigationStack { AllWaitingView() }
             case .search, .tag: NavigationStack { SearchView() }
+            case .page(let page):
+                // Keyed by page: PageView captures edit state at init.
+                NavigationStack { PageView(page: page, startEditing: page == newPage) }.id(page.id)
             }
         }
         // Review sheet lives in DayPageView, so bring Today forward when Review is requested.
@@ -63,12 +90,24 @@ struct RootView: View {
         }
         .onChange(of: selection) { _, item in
             if case .tag(let t) = item { SearchRouter.shared.query = "#\(t)" }
+            if case .page(let p) = item, p == newPage {} else { newPage = nil }
+        }
+        // The open page was deleted (Delete Page, blank cleanup, another device): back to the Notes list.
+        .onChange(of: pages) {
+            if case .page(let p) = selection, p.isDeleted || !pages.contains(p) { selection = .notes }
         }
         .onChange(of: SearchRouter.shared.shown) { selection = .search }
         .onChange(of: CaptureRouter.shared.requests) { selection = .today }
         #if DEBUG
         .task { applySearchFlag() }
         #endif
+    }
+
+    private func addPage() {
+        let page = NotePage()
+        context.insert(page)
+        newPage = page
+        selection = .page(page)
     }
     #else
     #if DEBUG

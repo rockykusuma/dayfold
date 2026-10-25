@@ -8,6 +8,12 @@ extension NotePage {
         let crumbs = Pages.breadcrumb(self)
         return crumbs.isEmpty ? nil : crumbs.map(\.displayTitle).joined(separator: " › ")
     }
+
+    /// Subpages for an `OutlineGroup`: nil (no disclosure arrow) when there are none.
+    var outlineChildren: [NotePage]? {
+        let c = sortedChildren.filter { !$0.isDeleted }
+        return c.isEmpty ? nil : c
+    }
 }
 
 /// The Notes tab: pinned pages, then unpinned top-level pages; search switches to flat results with breadcrumbs.

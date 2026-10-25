@@ -161,4 +161,5 @@ long-form journal view. (v0.2–v0.3; see README roadmap.)
 - 2026-10-25 The editor's insert row (Heading, Bullet, Checkbox, Link) appends a line at the end of the body: SwiftUI's `TextEditor` has no cursor API on iOS 17 / macOS 14.
 - 2026-10-25 The insert row's Link button inserts an open `[[` (not `[[]]`), so the title suggestion strip appears; tapping a suggestion closes the link.
 - 2026-10-25 On compact width the page toolbar shows More + Edit only (Pin and Share move into More): four items pushed Edit off an iPhone SE's bar.
+- 2026-10-25 Mac: pages live in the sidebar ("Pages" section, pinned then the top-level tree with subpages, collapsible, "+" New Page); selecting one opens it in the detail, so moving between pages is one click. iPhone keeps the Notes list: no room for a sidebar, and an expandable list there put two arrows on one row.
 - Before the first TestFlight build: deploy the CloudKit schema (NotePage) to production in the CloudKit Console.
