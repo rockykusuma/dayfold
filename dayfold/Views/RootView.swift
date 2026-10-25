@@ -2,16 +2,16 @@ import SwiftUI
 import SwiftData
 import DayfoldCore
 
-/// iPhone: Today, People, Search and Week tabs. Mac: sidebar with Today, This week, People, teams, and All waiting.
+/// iPhone: Today, People, Search and Journal tabs. Mac: sidebar with Today, Journal, People, teams, and All waiting.
 struct RootView: View {
     #if os(macOS)
-    enum SidebarItem: Hashable { case today, week, people, team(String), waiting, search, tag(String) }
+    enum SidebarItem: Hashable { case today, journal, people, team(String), waiting, search, tag(String) }
 
     @Query(sort: \Person.name) private var people: [Person]
     @Query(sort: \Entry.createdAt) private var entries: [Entry]
     #if DEBUG
     @State private var selection: SidebarItem? = CommandLine.arguments.contains("-search") ? .search
-        : CommandLine.arguments.contains("-week") ? .week : .today
+        : CommandLine.arguments.contains("-journal") || CommandLine.arguments.contains("-week") ? .journal : .today
     #else
     @State private var selection: SidebarItem? = .today
     #endif
@@ -21,7 +21,7 @@ struct RootView: View {
         NavigationSplitView {
             List(selection: $selection) {
                 Label("Today", systemImage: "calendar").tag(SidebarItem.today)
-                Label("This week", systemImage: "book.closed").tag(SidebarItem.week)
+                Label("Journal", systemImage: "book.closed").tag(SidebarItem.journal)
                 Label("People", systemImage: "person.2").tag(SidebarItem.people)
                 Label("Search", systemImage: "magnifyingglass").tag(SidebarItem.search)
                 let tags = Tags.all(entries)
@@ -47,7 +47,7 @@ struct RootView: View {
         } detail: {
             switch selection ?? .today {
             case .today: DayPageView()
-            case .week: NavigationStack { WeekView() }
+            case .journal: NavigationStack { JournalView() }
             case .people: NavigationStack { PeopleListView() }
             case .team(let team): NavigationStack { PeopleListView(team: team) }.id(team)
             case .waiting: NavigationStack { AllWaitingView() }
@@ -70,7 +70,7 @@ struct RootView: View {
     #else
     #if DEBUG
     @State private var tab = CommandLine.arguments.contains("-search") ? 2
-        : CommandLine.arguments.contains("-week") ? 3
+        : CommandLine.arguments.contains("-journal") || CommandLine.arguments.contains("-week") ? 3
         : CommandLine.arguments.contains("-people") || CommandLine.arguments.contains("-person") ? 1 : 0
     @Environment(\.modelContext) private var context
     #else
@@ -89,8 +89,8 @@ struct RootView: View {
             NavigationStack { SearchView() }
                 .tabItem { Label("Search", systemImage: "magnifyingglass") }
                 .tag(2)
-            NavigationStack { WeekView() }
-                .tabItem { Label("Week", systemImage: "book.closed") }
+            NavigationStack { JournalView() }
+                .tabItem { Label("Journal", systemImage: "book.closed") }
                 .tag(3)
         }
         #if DEBUG

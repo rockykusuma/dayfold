@@ -328,17 +328,17 @@ struct ReviewView: View {
         .readableWidth()
         .transition(.opacity)
         .onAppear {
-            let existing = (try? DayNotes.note(for: today, in: context))?.text ?? ""
+            let existing = (try? Journal.reflection(for: today, in: context))?.text ?? ""
             note = existing
             savedNote = existing
         }
         .onDisappear(perform: saveNote)
     }
 
-    /// Writes only when the text changed, so closing untouched never creates or rewrites a note.
+    /// Writes only when the text changed, so closing untouched never creates or rewrites the reflection.
     private func saveNote() {
         guard note != savedNote else { return }
-        try? DayNotes.set(note, for: today, in: context)
+        try? Journal.setReflection(note, for: today, in: context)
         savedNote = note
     }
 

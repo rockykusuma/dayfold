@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 import DayfoldCore
 
-/// One week looking back: Done by person, Stuck, Waiting on, day notes. ‹ › browse weeks.
+/// One week looking back: Done by person, Stuck, Waiting on, journal entries. ‹ › browse weeks.
 /// Rules live in `WeekReview`; this view only lays them out.
 struct WeekView: View {
     @Environment(\.modelContext) private var context
@@ -13,7 +13,8 @@ struct WeekView: View {
     @State private var weekOffset = 0
     @State private var editing: Entry?
     @State private var openedPerson: Person?
-    @State private var noteDay: NoteDay?
+    @State private var openedJournal: JournalEntry?
+    @State private var writingToday = false
     @State private var copied = false
 
     private let calendar = Calendar.current
@@ -82,7 +83,8 @@ struct WeekView: View {
             withAnimation(motion) { copied = false }
         }
         .sheet(item: $editing) { EntryEditor(entry: $0) }
-        .sheet(item: $noteDay) { NoteSheet(day: $0.day, isToday: calendar.isDate($0.day, inSameDayAs: today)) }
+        .sheet(item: $openedJournal) { JournalEditor(entry: $0) }
+        .sheet(isPresented: $writingToday) { JournalEditor(entry: nil) }
         .navigationDestination(item: $openedPerson) { PersonView(person: $0) }
     }
 
@@ -230,18 +232,21 @@ struct WeekView: View {
         let missingToday = review.isCurrent && !review.entries.contains { calendar.isDate($0.date, inSameDayAs: today) }
         if !review.entries.isEmpty || missingToday {
             Section {
-                // Tapping a journal row does nothing for now; a later task opens the entry editor.
                 ForEach(review.entries) { entry in
-                    (Text(entry.date, format: .dateTime.weekday(.abbreviated).day()).foregroundStyle(.secondary)
-                        + Text(" · ").foregroundStyle(.secondary)
-                        + Text(entry.preview).font(.system(.body, design: .serif)))
-                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                        .listRowInsets(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
-                        .listRowBackground(Color.clear)
+                    Button { openedJournal = entry } label: {
+                        (Text(entry.date, format: .dateTime.weekday(.abbreviated).day()).foregroundStyle(.secondary)
+                            + Text(" · ").foregroundStyle(.secondary)
+                            + Text(entry.preview).font(.system(.body, design: .serif)))
+                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
+                    .listRowBackground(Color.clear)
                 }
                 if missingToday {
-                    Button { noteDay = NoteDay(day: today) } label: {
-                        Label("Add a note for today", systemImage: "plus")
+                    Button { writingToday = true } label: {
+                        Label("Write about today", systemImage: "plus")
                             .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                             .contentShape(Rectangle())
                     }
@@ -280,57 +285,5 @@ struct WeekView: View {
         UIPasteboard.general.string = text
         #endif
         withAnimation(motion) { copied = true }
-    }
-}
-
-private struct NoteDay: Identifiable {
-    let day: Date
-    var id: Date { day }
-}
-
-/// Edit one day's note. Save with empty text deletes it.
-private struct NoteSheet: View {
-    let day: Date
-    let isToday: Bool
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.modelContext) private var context
-    @State private var text = ""
-    @State private var original = ""
-    @FocusState private var focused: Bool
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                TextField(isToday ? "How did today go?" : "Note", text: $text, axis: .vertical)
-                    .lineLimit(3...8)
-                    .font(.system(.body, design: .serif))
-                    .focused($focused)
-            }
-            .scrollContentBackground(.hidden)
-            .background(Color.paper)
-            .navigationTitle(day.formatted(.dateTime.weekday(.wide).day().month(.wide)))
-            #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-            #endif
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) { Button("Save", action: save) }
-            }
-            .keyboardDismissButton()
-        }
-        .presentationDetents([.medium, .large])
-        #if os(macOS)
-        .frame(minWidth: 380, minHeight: 240)
-        #endif
-        .onAppear {
-            original = (try? DayNotes.note(for: day, in: context))?.text ?? ""
-            text = original
-            focused = true
-        }
-    }
-
-    private func save() {
-        if text != original { try? DayNotes.set(text, for: day, in: context) }
-        dismiss()
     }
 }
