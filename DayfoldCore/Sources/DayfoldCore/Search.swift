@@ -57,6 +57,23 @@ public enum Search {
             .sorted { $0.date > $1.date }
     }
 
+    /// Note pages whose title + body contain every plain word (AND, case/diacritic-insensitive).
+    /// Title matches first, then body-only; each group newest `updatedAt` first. `#`, `@`, `is:` tokens find nothing.
+    public static func pages(_ pages: [NotePage], query: String) -> [NotePage] {
+        let raw = query.split(whereSeparator: \.isWhitespace)
+        guard !raw.contains(where: { $0.hasPrefix("#") || $0.hasPrefix("@") || $0.lowercased().hasPrefix("is:") }) else { return [] }
+        let tokens = parse(query)
+        let keys = tokens.compactMap { if case .text(let k) = $0 { k } else { nil } }
+        guard !keys.isEmpty, keys.count == tokens.count else { return [] }
+        func inTitle(_ p: NotePage) -> Bool { let t = PeopleDirectory.normalize(p.title); return keys.allSatisfy(t.contains) }
+        return pages
+            .filter { p in let h = PeopleDirectory.normalize(p.title + " " + p.body); return keys.allSatisfy(h.contains) }
+            .sorted { a, b in
+                let (x, y) = (inTitle(a), inTitle(b))
+                return x != y ? x : a.updatedAt > b.updatedAt
+            }
+    }
+
     /// By capture day, newest day first; order within a day is kept.
     public static func dayGroups(_ results: [Entry], calendar: Calendar = .current) -> [SearchDayGroup] {
         Dictionary(grouping: results) { calendar.startOfDay(for: $0.createdAt) }

@@ -131,3 +131,23 @@ extension SearchTests {
         #expect(Search.journal([old, new], query: "trip").map(\.date) == [at(2026,10,9), at(2026,10,1)])
     }
 }
+
+extension SearchTests {
+    @Test func pagesMatchWords() {
+        let p = NotePage(title: "Release process", body: "Tag the build in Xcode")
+        #expect(Search.pages([p], query: "release xcode").count == 1)
+        #expect(Search.pages([p], query: "release android").isEmpty)
+        #expect(Search.pages([p], query: "").isEmpty)
+    }
+
+    @Test func pagesTitleFirst() {
+        let title = NotePage(title: "Xcode", body: "", updatedAt: at(2026,10,1))
+        let body = NotePage(title: "Other", body: "use xcode", updatedAt: at(2026,10,9))
+        #expect(Search.pages([body, title], query: "xcode").map(\.title) == ["Xcode", "Other"])
+    }
+
+    @Test func pagesIgnoreTaskTokens() {
+        let p = NotePage(title: "x", body: "#x @a is:open")
+        for q in ["#x", "@a", "is:open", "x #"] { #expect(Search.pages([p], query: q).isEmpty) }
+    }
+}
