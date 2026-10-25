@@ -142,51 +142,16 @@ struct CaptureBar: View {
             + token.keyword + person.name.replacingOccurrences(of: " ", with: "_") + " "
     }
 
-    /// A note linked .to would never be waiting, so to: always captures a task.
-    private func entryKind(_ parsed: ParsedCapture) -> EntryKind {
-        if linkedTo?.link == .about { return .note }
-        if parsed.to != nil || linkedTo?.link == .to { return .task }
-        return kind
-    }
-
-    private func link(_ entry: Entry, _ parsed: ParsedCapture) {
-        if let linkedTo {
-            if linkedTo.link == .to {
-                Review.delegate(entry, to: linkedTo.person)
-            } else {
-                entry.person = linkedTo.person
-                entry.link = linkedTo.link
-            }
-        } else if let to = parsed.to, let person = try? PeopleDirectory.findOrCreate(to, in: context) {
-            Review.delegate(entry, to: person)   // to: wins; from text stays on the entry
-        } else if let from = parsed.from, let person = try? PeopleDirectory.findOrCreate(from, in: context) {
-            entry.person = person
-            entry.link = .from
-        }
-    }
-
     private var trimmed: String { text.trimmingCharacters(in: .whitespacesAndNewlines) }
 
     private func save() {
         guard !trimmed.isEmpty else { return }
-        let parsed = CaptureParser.parse(trimmed)
-        let kind = entryKind(parsed)
-        let entry = Entry(
-            text: parsed.text,
-            kind: kind,
-            scope: parsed.scope ?? scope,
-            createdAt: Date(),
-            showOn: Calendar.current.isDateInToday(day) ? nil : day,
-            dueOn: parsed.dueOn,
-            from: parsed.from,
-            tags: parsed.tags
-        )
         withAnimation(.snappy) {
-            context.insert(entry)
-            link(entry, parsed)
-            if kind == .task {
-                entry.isPriority = parsed.isPriority
-                entry.setRepeat(parsed.repeatRule)
+            if trimmed.contains("\n") {
+                Capture.addLines(trimmed, kind: kind, scope: scope, day: day, in: context)
+            } else {
+                Capture.add(trimmed, kind: kind, scope: scope, day: day,
+                            linkedTo: linkedTo.map { Capture.Link(person: $0.person, link: $0.link) }, in: context)
             }
         }
         text = ""

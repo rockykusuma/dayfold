@@ -41,6 +41,7 @@ struct DayfoldApp: App {
                 }
         }
         .modelContainer(container)
+        .commands { CaptureCommands() }
         .onChange(of: scenePhase, initial: true) { _, phase in
             // Link legacy from: text, merge duplicate people, remove duplicate repeats.
             if phase == .active { try? Maintenance.tidy(in: container.mainContext) }

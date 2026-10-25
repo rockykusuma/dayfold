@@ -64,6 +64,20 @@ struct DayPageView: View {
             .scrollContentBackground(.hidden)
             .background(Color.paper)
             .scrollDismissesKeyboard(.interactively)
+            .dropDestination(for: String.self) { items, _ in
+                guard !isPast else { return false }
+                var added = false
+                withAnimation(.snappy) {
+                    added = !Capture.addLines(items.joined(separator: "\n"), scope: filter.defaultScope ?? .lastUsed,
+                                              day: day, in: context).isEmpty
+                }
+                return added
+            }
+            .onChange(of: CaptureRouter.shared.requests) {
+                day = today
+                // After RootView's tab/sidebar switch has landed.
+                Task { @MainActor in captureFocused = true }
+            }
             #if os(macOS)
             .navigationTitle("Dayfold")
             #else
@@ -279,11 +293,7 @@ struct DayPageView: View {
             .accessibilityLabel("Review, \(pendingReview.count) open")
 
             #if os(macOS)
-            Button {
-                day = today
-                captureFocused = true
-            } label: { Label("New", systemImage: "square.and.pencil") }
-            .keyboardShortcut("n", modifiers: .command)
+            Button { CaptureRouter.shared.request() } label: { Label("New", systemImage: "square.and.pencil") }
             .help("New entry")
             #endif
         }

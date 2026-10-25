@@ -59,6 +59,7 @@ struct RootView: View {
             if case .tag(let t) = item { SearchRouter.shared.query = "#\(t)" }
         }
         .onChange(of: SearchRouter.shared.shown) { selection = .search }
+        .onChange(of: CaptureRouter.shared.requests) { selection = .today }
         #if DEBUG
         .task { applySearchFlag() }
         #endif
@@ -101,6 +102,7 @@ struct RootView: View {
             if show { tab = 0 }
         }
         .onChange(of: SearchRouter.shared.shown) { tab = 2 }
+        .onChange(of: CaptureRouter.shared.requests) { tab = 0 }
     }
     #endif
 }
