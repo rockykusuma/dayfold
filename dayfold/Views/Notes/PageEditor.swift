@@ -16,7 +16,7 @@ struct PageEditor: View {
         ("Heading", "number", "# "),
         ("Bullet", "list.bullet", "- "),
         ("Checkbox", "checklist", "- [ ] "),
-        ("Link", "link", "[[]]"),
+        ("Link", "link", "[["),   // open, so the suggestion strip shows; a suggestion tap closes it
     ]
 
     var body: some View {
@@ -88,7 +88,6 @@ struct PageEditor: View {
                         }
                     }
                 }
-                .transition(.opacity)
             }
         }
     }

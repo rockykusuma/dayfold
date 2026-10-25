@@ -3,6 +3,7 @@ import SwiftData
 import DayfoldCore
 
 /// A page to push. Hosts declare `.navigationDestination(for: PageRoute.self) { PageView(page: $0.page, startEditing: $0.startEditing) }`.
+/// Always push a fresh PageView per route (or key it with `.id(page.id)`): edit state and the start title are captured at init.
 struct PageRoute: Hashable {
     let page: NotePage
     var startEditing = false
@@ -31,6 +32,8 @@ struct PageView: View {
     @State private var confirmingDelete = false
     @State private var moving = false
     @State private var toggles = 0
+    /// Set once we've asked to pop, so the deleted-page branch doesn't dismiss a second time.
+    @State private var popped = false
 
     init(page: NotePage, startEditing: Bool = false) {
         self.page = page
@@ -41,7 +44,8 @@ struct PageView: View {
 
     var body: some View {
         if page.isDeleted || page.modelContext == nil {
-            Color.paper
+            // Deleted while off screen (blank cleanup on a tab switch): leave as soon as we're shown again.
+            Color.paper.onAppear(perform: pop)
         } else {
             content
         }
@@ -70,7 +74,7 @@ struct PageView: View {
             Button("Delete Page", role: .destructive) {
                 editing = false
                 Pages.delete(page, in: context)
-                dismiss()
+                pop()
             }
         } message: {
             Text("Its subpages move up a level.")
@@ -236,12 +240,22 @@ struct PageView: View {
     /// `editing` is the once-only guard: Done clears it, so the later `onDisappear` does nothing.
     private func finishEditing(pop: Bool) {
         guard editing, !page.isDeleted, page.modelContext != nil else { return }
+        // A cleared title would leave `[[Old]]` links dangling; keep the old one. An untitled page stays untitled.
+        if page.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty, page.title != startTitle {
+            page.title = startTitle
+        }
         withAnimation(reduceMotion ? nil : .snappy) { editing = false }
         PageLinks.rename(from: startTitle, to: page.title, in: allPages)
         if page.isBlank {
             Pages.delete(page, in: context)
-            if pop { dismiss() }
+            if pop { self.pop() }
         }
+    }
+
+    private func pop() {
+        guard !popped else { return }
+        popped = true
+        dismiss()
     }
 }
 

@@ -42,7 +42,7 @@ struct PageBlocksView: View {
                 }
                 .buttonStyle(.plain)
                 .padding(.leading, -12)   // keep the mark aligned with text while the target stays 44pt
-                .accessibilityLabel(text)
+                .accessibilityLabel(Self.plain(text))
                 .accessibilityValue(checked ? "Checked" : "Unchecked")
                 Self.inline(text)
                     .foregroundStyle(checked ? .secondary : .primary)
@@ -81,10 +81,16 @@ struct PageBlocksView: View {
 
     /// Bold/italic/code/links via `AttributedString(markdown:)`; `[[links]]` become `dayfold-page:` URLs first.
     static func inline(_ text: String) -> Text {
+        styled(text).map(Text.init) ?? Text(verbatim: text)
+    }
+
+    /// The rendered words without Markdown marks (`**`, `[[ ]]`), for VoiceOver labels.
+    static func plain(_ text: String) -> String {
+        styled(text).map { String($0.characters) } ?? text
+    }
+
+    private static func styled(_ text: String) -> AttributedString? {
         let options = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
-        if let styled = try? AttributedString(markdown: PageLinks.inlineMarkdown(text), options: options) {
-            return Text(styled)
-        }
-        return Text(verbatim: text)
+        return try? AttributedString(markdown: PageLinks.inlineMarkdown(text), options: options)
     }
 }
