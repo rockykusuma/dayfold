@@ -120,3 +120,10 @@ long-form journal view. (v0.2–v0.3; see README roadmap.)
   "Add to Dayfold" via `NSServices` + `NSApp.servicesProvider`. Share extension and widgets
   deferred (need new targets + an App Group). Spec: docs/superpowers/specs/2026-10-25-capture-everywhere-design.md
 - Quick-capture hotkey default is ⌃⌥D, not ⌃⌥Space: ⌃⌥Space is macOS's "Select next source in Input menu" and wins on Macs with 2+ input sources (overrides the design doc).
+- 2026-10-25 Journal & insights: Week page (Done by person, Stuck, Waiting on, day notes, Share update /
+  Copy), one-line `DayNote` per day from Review or the Week page. The week follows the locale's first weekday
+  (`dateInterval(of: .weekOfYear)`). Stuck = open own tasks with age ≥ 3 (the amber threshold). Stuck and
+  Waiting on show only for the current week; past weeks show Done, the dropped count and notes. Day notes are
+  never in the update text. Same-day notes from two devices are merged by `Maintenance.tidy`. No streaks,
+  scores or percentages. Spec: docs/superpowers/specs/2026-10-25-journal-insights-design.md
+- Before the first TestFlight build: deploy the CloudKit schema (DayNote) to production in the CloudKit Console.

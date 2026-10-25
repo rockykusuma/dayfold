@@ -72,6 +72,28 @@ enum DemoData {
         let plants = Entry(text: "Water the plants", scope: .personal, createdAt: at(0, 8, 0))
         ctx.insert(plants)
         plants.setRepeat(.daily)
+
+        // Week page: closed across this week (clamped to its first day so they never slip into last week).
+        let weekStart = cal.dateInterval(of: .weekOfYear, for: today)?.start ?? today
+        let intoWeek = cal.dateComponents([.day], from: weekStart, to: today).day ?? 0
+        func closed(_ daysAgo: Int, _ hour: Int) -> Date { at(min(daysAgo, intoWeek), hour, 0) }
+        let boardSlides = Entry(text: "Hiring slides for the board pack", createdAt: at(6, 9, 30))
+        let escalations = Entry(text: "Summarise last month's customer escalations", createdAt: at(5, 10, 15))
+        let flaky = Entry(text: "Fix the flaky sync tests", createdAt: at(5, 14, 0))
+        let offsite = Entry(text: "Book the team offsite venue", createdAt: at(4, 11, 0))
+        let dashboards = Entry(text: "Migrate the old alert dashboards", createdAt: at(6, 16, 0))
+        let rotation = Entry(text: "Draft the November on-call rotation", createdAt: at(4, 10, 20))   // stuck
+        [boardSlides, escalations, flaky, offsite, dashboards, rotation].forEach(ctx.insert)
+        link(boardSlides, meera, .from)
+        link(escalations, meera, .from)
+        Review.delegate(flaky, to: arjun, now: at(5, 14, 5))
+        Review.apply(.done, to: boardSlides, now: closed(3, 15))
+        Review.apply(.done, to: escalations, now: closed(1, 11))
+        Review.apply(.done, to: flaky, now: closed(2, 17))
+        Review.apply(.done, to: offsite, now: closed(4, 12))
+        Review.apply(.drop, to: dashboards, now: closed(2, 10))
+        ctx.insert(DayNote(day: at(1, 0, 0), text: "Long day of interviews. The migration finally feels close."))
+        ctx.insert(DayNote(day: at(2, 0, 0), text: "Quiet morning, good focus on the sync doc."))
         return container
     }
 }
