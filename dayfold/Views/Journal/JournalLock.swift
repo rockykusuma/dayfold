@@ -64,7 +64,8 @@ import LocalAuthentication
 
     static var toggleTitle: String {
         let context = LAContext()
-        guard context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: nil) else { return "Lock with passcode" }
+        // Called only so `biometryType` is filled in; false when biometry is merely locked out, which still names it.
+        _ = context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: nil)
         switch context.biometryType {
         case .faceID: return "Lock with Face ID"
         case .touchID: return "Lock with Touch ID"

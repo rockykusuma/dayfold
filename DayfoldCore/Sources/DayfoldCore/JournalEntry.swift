@@ -100,7 +100,7 @@ public enum Journal {
     }
 
     /// (a) Entries sharing an id: keep the newest `updatedAt`. (b) Several reflections on one calendar
-    /// day: keep the oldest, join distinct texts in `updatedAt` order, take the newest `updatedAt`.
+    /// day: keep the oldest, join texts that add a new line in `updatedAt` order, take the newest `updatedAt`.
     /// Plain entries are never merged by day. Does not save.
     public static func dedupe(calendar: Calendar = .current, in context: ModelContext) throws {
         var survivors: [JournalEntry] = []
@@ -121,8 +121,15 @@ public enum Journal {
                     loser.text = loser.text.isEmpty ? title : title + "\n" + loser.text
                 }
             }
-            var texts: [String] = []
-            for t in ordered.map(\.text) where !t.isEmpty && !texts.contains(t) { texts.append(t) }
+            // Skip a text whose non-empty lines are all already in the merged text (a copy, or part of one).
+            var texts: [String] = [], seen = Set<String>()
+            for t in ordered.map(\.text) {
+                let lines = t.split(whereSeparator: \.isNewline).map { $0.trimmingCharacters(in: .whitespaces) }
+                    .filter { !$0.isEmpty }
+                guard !lines.allSatisfy(seen.contains) else { continue }
+                texts.append(t)
+                seen.formUnion(lines)
+            }
             ordered[0].text = texts.joined(separator: "\n")
             ordered[0].updatedAt = ordered.last!.updatedAt
             for loser in ordered.dropFirst() { absorb(loser, into: ordered[0], in: context) }

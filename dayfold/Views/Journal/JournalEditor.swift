@@ -19,6 +19,8 @@ struct JournalEditor: View {
     @State private var picked: [PhotosPickerItem] = []
     /// Picked photos still loading/downscaling. While > 0, Done and the picker are disabled.
     @State private var importing = 0
+    /// Photos from the last pick that couldn't be loaded, decoded or fit under the cap.
+    @State private var failedPhotos = 0
     @State private var confirmingDiscard = false
     @State private var confirmingDelete = false
     @FocusState private var bodyFocused: Bool
@@ -27,7 +29,7 @@ struct JournalEditor: View {
 
     static let maxPhotos = 4
 
-    /// An existing photo (kept) or newly imported, already-downscaled data.
+    /// An existing photo (kept; its bytes are read by the thumbnail, not here) or newly imported, already-downscaled data.
     struct DraftPhoto: Identifiable {
         let id = UUID()
         var model: JournalPhoto?
@@ -41,7 +43,8 @@ struct JournalEditor: View {
 
     init(entry: JournalEntry?, date: Date = Date()) {
         self.entry = entry
-        let photos = entry?.sortedPhotos.map { DraftPhoto(model: $0, data: $0.data) } ?? []
+        // No `data` here: init runs on every parent render, and each read can load a file.
+        let photos = entry?.sortedPhotos.map { DraftPhoto(model: $0) } ?? []
         let start = Snapshot(date: entry?.date ?? date, title: entry?.title ?? "", text: entry?.text ?? "",
                              isBookmarked: entry?.isBookmarked ?? false, photos: photos.map { $0.model?.persistentModelID })
         initial = start
@@ -62,7 +65,9 @@ struct JournalEditor: View {
             && text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && photos.isEmpty
     }
     private var suggestions: [JournalSuggestion] {
-        entry == nil && title.isEmpty && text.isEmpty ? JournalSuggestions.make(tasks: tasks, day: date) : []
+        entry == nil && title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? JournalSuggestions.make(tasks: tasks, day: date) : []
     }
 
     var body: some View {
@@ -172,7 +177,7 @@ struct JournalEditor: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     ForEach(photos) { photo in
-                        PhotoThumbnail(data: photo.data, size: 72)
+                        PhotoThumbnail(id: photo.id, size: 72) { photo.data ?? photo.model?.data }
                             .overlay(alignment: .topTrailing) {
                                 Button {
                                     withAnimation(reduceMotion ? nil : .snappy) { photos.removeAll { $0.id == photo.id } }
@@ -204,6 +209,11 @@ struct JournalEditor: View {
                 if importing > 0 { ProgressView().controlSize(.small) }
             }
         }
+        if failedPhotos > 0 {
+            Text(failedPhotos == 1 ? "Couldn't add 1 photo" : "Couldn't add \(failedPhotos) photos")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
     }
 
     /// Loads each picked item in order, downscales off the main thread, appends up to the 4-photo cap.
@@ -211,6 +221,7 @@ struct JournalEditor: View {
         let items = picked
         guard !items.isEmpty else { return }
         picked = []
+        failedPhotos = 0
         importing += items.count
         Task {
             for item in items {
@@ -218,7 +229,7 @@ struct JournalEditor: View {
                 guard let raw = try? await item.loadTransferable(type: Data.self),
                       let small = await Task.detached(operation: { PhotoImport.downscaled(raw) }).value,
                       photos.count < Self.maxPhotos   // re-checked right before the append
-                else { continue }
+                else { failedPhotos += 1; continue }
                 photos.append(DraftPhoto(data: small))
             }
         }

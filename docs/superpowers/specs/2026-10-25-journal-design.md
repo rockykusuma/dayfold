@@ -89,14 +89,15 @@ Helpers: `sortedPhotos` (by `order`), `hasPhotos`, `isBlank` (title, text trimme
   `month` with an entry).
 
 ### `JournalSuggestions`
-`JournalSuggestions.make(tasks: [Entry], day: Date, calendar:) -> [JournalSuggestion]`,
+`JournalSuggestions.make(tasks: [Entry], day: Date, now: Date = Date(), calendar:) -> [JournalSuggestion]`,
 `JournalSuggestion { id: String; title: String; detail: String; kind: .fromYourDay | .prompt }`.
 From your day (in this order, each only when it applies, at most 3):
 1. Done that day ≥ 1 → title "You finished N thing(s)" (singular "thing" for 1), detail
    "Including “text”" + " for Name" when the most recent one has a person.
-2. Oldest waiting (own `to` link) ≥ 3 days → title "Name has owed you this for Nd", detail "“text”".
-3. Oldest own open task with age ≥ 3 → title "Open for Nd", detail "“text”".
-4. A task captured that day with a `from` person → title "Name asked you today", detail "“text”".
+2. Oldest waiting (own `to` link, with a person) ≥ 3 days → title "Name has owed you this for Nd", detail "“text”".
+3. Oldest own open task already showing (`showOn` ≤ day) with age ≥ 3 → title "Open for Nd", detail "“text”".
+4. A task captured that day with a `from` person → title "Name asked you today" when `day` is `now`'s day,
+   "Name asked you" for a past day; detail "“text”".
 Then 3 prompts chosen from this fixed list by `dayOfYear % count` (rotating, deterministic):
 "What made today good?", "What's on your mind for tomorrow?", "Who helped you today?",
 "What did you learn today?", "What would you do differently?", "What are you grateful for?".
@@ -138,7 +139,10 @@ photos row: thumbnails with a remove button each + `PhotosPicker` ("Add Photos",
 bookmark toggle, Cancel, Done. New entry: a **Suggestions** section above the fields while title and text
 are empty — "From your day" cards then "Prompts" cards; tapping fills the title and focuses the body.
 Done on a blank new entry inserts nothing; Done on an existing entry that is now blank asks "Delete this
-entry?". Cancel with changes asks "Discard changes?". Photos are downscaled on import to max 2048 px
+entry?". Saving a reflection with its date moved to another calendar day turns it into an ordinary entry
+(`isReflection = false`), so it never merges into that day's reflection. Photos that can't be loaded, decoded or fit
+under the cap show a caption under the photos row, "Couldn't add 1 photo" / "Couldn't add N photos", cleared on the
+next pick. Cancel with changes asks "Discard changes?". Photos are downscaled on import to max 2048 px
 (ImageIO thumbnail, JPEG 0.8) and stored as `JournalPhoto.data`.
 
 ### Elsewhere
@@ -157,6 +161,11 @@ entry?". Cancel with changes asks "Discard changes?". Photos are downscaled on i
 - `JournalLock` (@Observable, shared): `isUnlocked`; `unlock()` uses `LAContext.evaluatePolicy(
   .deviceOwnerAuthentication, localizedReason: "Unlock your journal")`; relocks when the app goes to the
   background. Turning the toggle on requires one successful authentication.
+- With no device passcode (`canEvaluatePolicy(.deviceOwnerAuthentication)` is false) nothing could ever unlock it, so
+  the lock reads as off (nothing hidden), `unlock()` succeeds, and the toggle is disabled with the footer "Set a
+  device passcode to lock your journal." The toggle shows the tapped value while its prompt is up and settles on the
+  result (reverting after a failed or cancelled prompt). The label keeps naming Face ID / Touch ID while biometry is
+  temporarily locked out.
 - While locked: Journal tab shows a centred lock glyph + "Journal locked" + "Unlock" button; the Day page
   Journal section, Search's Journal section and the Week page Notes section are hidden; Review hides the
   reflection field. Info.plist gains `NSFaceIDUsageDescription` = "Dayfold uses Face ID to unlock your

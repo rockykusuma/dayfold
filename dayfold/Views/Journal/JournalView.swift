@@ -4,16 +4,11 @@ import DayfoldCore
 
 /// The Journal tab: Insights on top, filter chips, then entry cards newest first, grouped by month.
 struct JournalView: View {
-    enum Filter: String, CaseIterable, Identifiable {
-        case all = "All", bookmarked = "Bookmarked", photos = "With photos"
-        var id: String { rawValue }
-    }
-
     @Environment(\.modelContext) private var context
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query(sort: \JournalEntry.date, order: .reverse) private var entries: [JournalEntry]
     @Query private var tasks: [Entry]
-    @State private var filter = Filter.all
+    @State private var filter = JournalFeedFilter.all
     @State private var day: Date?
     @State private var editing: JournalEntry?
     @State private var creating = false
@@ -28,27 +23,6 @@ struct JournalView: View {
     private let calendar = Calendar.current
     private var motion: Animation? { reduceMotion ? nil : .snappy }
 
-    private var shown: [JournalEntry] {
-        entries.filter { e in
-            switch filter {
-            case .all: true
-            case .bookmarked: e.isBookmarked
-            case .photos: e.hasPhotos
-            }
-        }
-        .filter { e in day.map { calendar.isDate(e.date, inSameDayAs: $0) } ?? true }
-    }
-
-    /// Consecutive runs of the (already newest-first) feed that share a month.
-    private var months: [(month: Date, entries: [JournalEntry])] {
-        var groups: [(month: Date, entries: [JournalEntry])] = []
-        for e in shown {
-            let m = calendar.dateInterval(of: .month, for: e.date)?.start ?? e.date
-            if groups.last?.month == m { groups[groups.count - 1].entries.append(e) } else { groups.append((m, [e])) }
-        }
-        return groups
-    }
-
     var body: some View {
         ScrollViewReader { proxy in
             List {
@@ -57,6 +31,7 @@ struct JournalView: View {
                                  // Bring the filtered feed into view; on small phones the calendar fills the screen.
                                  withAnimation(motion) { day = d; proxy.scrollTo("chips", anchor: .top) }
                              },
+                             onMonthChange: { withAnimation(motion) { day = nil } },
                              onWeek: { showWeek = true })
                     .listRow()
 
@@ -65,7 +40,8 @@ struct JournalView: View {
                 } else {
                     chips.listRow(insets: EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
                         .id("chips")
-                    let months = months
+                    let months = JournalFeed.months(JournalFeed.filter(entries, kind: filter, day: day, calendar: calendar),
+                                                    calendar: calendar)
                     if months.isEmpty {
                         Text("Nothing matches this filter.")
                             .font(.subheadline)
@@ -74,13 +50,14 @@ struct JournalView: View {
                             .padding(.vertical, 32)
                             .listRow()
                     }
-                    ForEach(months, id: \.month) { group in
+                    ForEach(months) { group in
                         Section {
                             ForEach(group.entries) { card($0) }
                         } header: {
-                            Text(group.month, format: .dateTime.month(.wide).year())
+                            Text(group.id, format: .dateTime.month(.wide).year())
                                 .font(.system(.headline, design: .serif))
-                                .foregroundStyle(.primary)
+                                // A concrete colour: hierarchical `.primary` resolves to the header's grey style.
+                                .foregroundStyle(Color.primary)
                         }
                     }
                 }
@@ -112,10 +89,10 @@ struct JournalView: View {
         .sheet(isPresented: $creating) { JournalEditor(entry: nil) }
         .navigationDestination(isPresented: $showWeek) { WeekView() }
         #if DEBUG
-        // `-edit <title or text prefix>` opens that journal entry (screenshots can't tap).
+        // `-journal -edit <title or text prefix>` opens that journal entry (screenshots can't tap).
         .task {
             let args = CommandLine.arguments
-            guard let i = args.firstIndex(of: "-edit"), i + 1 < args.count else { return }
+            guard args.contains("-journal"), let i = args.firstIndex(of: "-edit"), i + 1 < args.count else { return }
             editing = entries.first { $0.title.hasPrefix(args[i + 1]) || $0.text.hasPrefix(args[i + 1]) }
         }
         #endif
@@ -141,7 +118,7 @@ struct JournalView: View {
                     .accessibilityHint("Shows every day again")
                     .transition(.opacity)
                 }
-                ForEach(Filter.allCases) { f in
+                ForEach(JournalFeedFilter.allCases) { f in
                     chip(selected: filter == f) { withAnimation(motion) { filter = f } } label: { Text(f.rawValue) }
                 }
             }

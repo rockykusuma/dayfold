@@ -42,8 +42,10 @@ public enum Search {
     }
 
     /// Journal entries whose title or text contain every plain word (AND, case/diacritic-insensitive), newest first.
-    /// `#`, `@` and `is:` tokens are about tasks, so they find nothing here.
+    /// `#`, `@` and `is:` tokens (even bare ones) are about tasks, so they find nothing here.
     public static func journal(_ entries: [JournalEntry], query: String) -> [JournalEntry] {
+        let raw = query.split(whereSeparator: \.isWhitespace)
+        guard !raw.contains(where: { $0.hasPrefix("#") || $0.hasPrefix("@") || $0.lowercased().hasPrefix("is:") }) else { return [] }
         let tokens = parse(query)
         let keys = tokens.compactMap { if case .text(let k) = $0 { k } else { nil } }
         guard !keys.isEmpty, keys.count == tokens.count else { return [] }

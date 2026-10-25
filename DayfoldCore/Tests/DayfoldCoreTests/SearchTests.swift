@@ -117,6 +117,15 @@ extension SearchTests {
         #expect(Search.journal([e], query: "").isEmpty)
     }
 
+    @Test func journalBareTokenExcluded() {
+        let e = JournalEntry(date: at(2026,10,20), title: "Offsite", text: "venue")
+        #expect(Search.journal([e], query: "venue #").isEmpty)
+        #expect(Search.journal([e], query: "venue @").isEmpty)
+        #expect(Search.journal([e], query: "venue is:").isEmpty)
+        #expect(Search.journal([e], query: "venue IS:nope").isEmpty)
+        #expect(Search.journal([e], query: "venue").count == 1)
+    }
+
     @Test func journalOrder() {
         let old = JournalEntry(date: at(2026,10,1), text: "trip"), new = JournalEntry(date: at(2026,10,9), text: "trip")
         #expect(Search.journal([old, new], query: "trip").map(\.date) == [at(2026,10,9), at(2026,10,1)])

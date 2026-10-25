@@ -16,6 +16,12 @@ struct SettingsView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var notifications: UNAuthorizationStatus?
     @State private var iCloud: CKAccountStatus?
+    /// Lock row state, read once per appearance (each read makes an `LAContext`).
+    @State private var lockTitle = ""
+    @State private var canLock = false
+    /// What the toggle shows: the tapped value while its prompt is up, then the lock's real state.
+    @State private var lockOn = false
+    @State private var lockPending = false
     @ScaledMetric(relativeTo: .subheadline) private var dayCircle: CGFloat = 38
 
     private let calendar = Calendar.current
@@ -57,12 +63,12 @@ struct SettingsView: View {
             #endif
 
             Section {
-                Toggle(JournalLock.toggleTitle, isOn: lockToggle)
-                    .disabled(JournalLock.shared.isAuthenticating || !JournalLock.canAuthenticate)
+                Toggle(lockTitle, isOn: lockToggle)
+                    .disabled(lockPending || JournalLock.shared.isAuthenticating || !canLock)
             } header: {
                 Text("Journal")
             } footer: {
-                if !JournalLock.canAuthenticate {
+                if !canLock {
                     Text("Set a device passcode to lock your journal.")
                 }
             }
@@ -97,6 +103,7 @@ struct SettingsView: View {
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
         .background(Color.paper)
+        .onAppear(perform: refreshLock)
         .task { await refresh() }
         .onChange(of: "\(hour):\(minute):\(weekdays)") {
             Task {
@@ -105,7 +112,7 @@ struct SettingsView: View {
             }
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { Task { await refresh() } }
+            if phase == .active { refreshLock(); Task { await refresh() } }
         }
         #if os(macOS)
         .frame(width: 460)
@@ -130,15 +137,26 @@ struct SettingsView: View {
     /// Off while already unlocked is free.
     private var lockToggle: Binding<Bool> {
         Binding(
-            get: { JournalLock.shared.isEnabled },
+            get: { lockOn },
             set: { on in
+                guard !lockPending else { return }
+                lockOn = on
+                lockPending = true
                 let lock = JournalLock.shared
                 Task {
-                    if on || !lock.isUnlocked { guard await lock.unlock() else { return } }
-                    lock.isEnabled = on
+                    let ok = on || !lock.isUnlocked ? await lock.unlock() : true
+                    if ok { lock.isEnabled = on }
+                    lockOn = lock.isEnabled   // settles on the real state; reverts after a failed or cancelled prompt
+                    lockPending = false
                 }
             }
         )
+    }
+
+    private func refreshLock() {
+        lockTitle = JournalLock.toggleTitle
+        canLock = JournalLock.canAuthenticate
+        if !lockPending { lockOn = JournalLock.shared.isEnabled }   // the prompt itself makes the app inactive
     }
 
     /// Filled ink circle = on. Full-width hit area per day, at least 44pt tall.

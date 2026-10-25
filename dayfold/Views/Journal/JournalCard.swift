@@ -29,13 +29,9 @@ struct JournalCard: View {
                 Text(entry.text)
                     .lineLimit(4)
             }
-            if !hasTitle && !hasText {
-                Text(entry.displayPreview)
-                    .foregroundStyle(.secondary)
-            }
             if entry.hasPhotos {
                 HStack(spacing: 6) {
-                    ForEach(entry.sortedPhotos.prefix(4)) { PhotoThumbnail(data: $0.data, size: 64) }
+                    ForEach(entry.sortedPhotos.prefix(4)) { p in PhotoThumbnail(id: p.id, size: 64) { p.data } }
                 }
             }
             if entry.isReflection {

@@ -143,4 +143,12 @@ long-form journal view. (v0.2–v0.3; see README roadmap.)
   the auth prompt itself makes the app inactive. Turning the lock off while locked needs a successful unlock. The lock is a cover, so an open
   editor keeps its draft. Journal content is never in Share update / Copy, notifications or Services.
 - 2026-10-25 Photos are downscaled on import to a 2048 px long side (JPEG 0.8), up to 4 per entry, external storage.
+- 2026-10-25 The Journal feed's filter (All / Bookmarked / With photos, plus a calendar day) and month grouping are Core rules
+  (`JournalFeed`); the view only draws them. Paging the Insights month clears the day filter.
+- 2026-10-25 Photos that fail to load or decode (or exceed the 4-photo cap) are never dropped silently: the editor shows
+  "Couldn't add 1 photo" / "Couldn't add N photos" under the photos row until the next pick.
+- 2026-10-25 Lock label follows the device's biometry type even while biometry is temporarily locked out; with no device
+  passcode the lock can't be turned on (toggle disabled, "Set a device passcode to lock your journal.") and reads as off.
+- 2026-10-25 The lock toggle shows the tapped value while the auth prompt is up and settles on the result (reverts on
+  failure or cancel), instead of flicking back and forth.
 - Before the first TestFlight build: deploy the CloudKit schema (JournalEntry, JournalPhoto) to production in the CloudKit Console.

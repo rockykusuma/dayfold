@@ -6,9 +6,9 @@ import DayfoldCore
 struct SearchView: View {
     @Query(sort: \Entry.createdAt) private var entries: [Entry]
     @Query(sort: \Person.name) private var people: [Person]
+    @Query(sort: \JournalEntry.date, order: .reverse) private var journal: [JournalEntry]
     @Bindable private var router = SearchRouter.shared
     @Environment(\.modelContext) private var context
-    @Query(sort: \JournalEntry.date, order: .reverse) private var journal: [JournalEntry]
     @State private var editing: Entry?
     @State private var journalEditing: JournalEntry?
     @State private var openedPerson: Person?

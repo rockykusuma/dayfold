@@ -149,7 +149,9 @@ struct JournalTests {
     }
 
     @Test func tidyMigratesAndDedupes() throws {
-        context.insert(DayNote(day: at(2026,10,18), text: "Good", updatedAt: at(2026,10,18,22), calendar: ist))
+        let note = DayNote(day: at(2026,10,18), text: "Good", updatedAt: at(2026,10,18,22), calendar: ist)
+        context.insert(note)
+        let noteID = note.id
         let id = UUID()
         context.insert(JournalEntry(id: id, date: at(2026,10,19,9), text: "old", updatedAt: at(2026,10,19,9)))
         context.insert(JournalEntry(id: id, date: at(2026,10,19,9), text: "new", updatedAt: at(2026,10,19,10)))
@@ -158,6 +160,8 @@ struct JournalTests {
         let all = try entries()
         #expect(Set(all.map(\.id)).count == all.count)
         #expect(all.count == 2)
+        #expect(all.contains { $0.id == noteID && $0.text == "Good" && $0.isReflection })
+        #expect(all.contains { $0.id == id && $0.text == "new" })
     }
 
     @Test func dedupeKeepsPhotos() throws {
@@ -196,6 +200,17 @@ struct JournalTests {
         #expect(all[0].title == "A")
         #expect(all[0].text.contains("B\nb"))
         #expect(all[0].text.contains("a"))
+    }
+
+    @Test func mergeSkipsRepeatedLines() throws {
+        for (t, h) in [("A\nB", 20), ("A", 21), (" B \n\nA", 22), ("C", 23)] {
+            context.insert(JournalEntry(date: at(2026,10,19,21), text: t, isReflection: true,
+                                        createdAt: at(2026,10,19,h), updatedAt: at(2026,10,19,h)))
+        }
+        try Journal.dedupe(calendar: ist, in: context)
+        let all = try entries()
+        #expect(all.count == 1)
+        #expect(all[0].text == "A\nB\nC")
     }
 
     @Test func dedupeReflectionsKeepPhotos() throws {

@@ -8,6 +8,8 @@ struct InsightsCard: View {
     let tasks: [Entry]
     /// Called with a day that has entries.
     let onSelectDay: (Date) -> Void
+    /// Called after ‹ or › pages to another month.
+    let onMonthChange: () -> Void
     let onWeek: () -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Months back from now (0 = this month).
@@ -125,6 +127,7 @@ struct InsightsCard: View {
     private func monthButton(_ direction: Int, symbol: String, label: String) -> some View {
         Button {
             withAnimation(motion) { monthOffset += direction }
+            onMonthChange()
         } label: {
             Image(systemName: symbol)
                 .font(.body.weight(.semibold))

@@ -7,9 +7,9 @@ import DayfoldCore
 struct DayPageView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \Entry.createdAt) private var allEntries: [Entry]
+    @Query(sort: \JournalEntry.date) private var journal: [JournalEntry]
     @AppStorage("dayPage.scope") private var filter: ScopeFilter = .all
     @State private var day = Calendar.current.startOfDay(for: Date())
-    @Query(sort: \JournalEntry.date) private var journal: [JournalEntry]
     @State private var editing: Entry?
     @State private var journalEditing: JournalEditorTarget?
     @State private var delegating: Entry?
@@ -38,9 +38,6 @@ struct DayPageView: View {
     private var isPast: Bool { day < today }
     private var isFuture: Bool { day > today }
     private var noon: Date { calendar.date(bySettingHour: 12, minute: 0, second: 0, of: day) ?? day }
-    private var dayJournal: [JournalEntry] { journal.filter { calendar.isDate($0.date, inSameDayAs: day) } }
-    /// Hidden while the journal is locked; its editor sheet hangs off the List, so hiding never dismisses it.
-    private var showJournal: Bool { !JournalLock.shared.isHidden && (!isFuture || !dayJournal.isEmpty) }
 
     private var items: [Entry] {
         DayPage.items(allEntries, on: day).filter { filter.includes($0.scope) }
@@ -51,6 +48,9 @@ struct DayPageView: View {
     var body: some View {
         NavigationStack {
             List {
+                let dayJournal = journal.filter { calendar.isDate($0.date, inSameDayAs: day) }
+                // Hidden while the journal is locked; its editor sheet hangs off the List, so hiding never dismisses it.
+                let showJournal = !JournalLock.shared.isHidden && (!isFuture || !dayJournal.isEmpty)
                 header
                     .listRowInsets(EdgeInsets())
                     .listRowSeparator(.hidden)
@@ -125,9 +125,10 @@ struct DayPageView: View {
             .sheet(item: $journalEditing) { JournalEditor(entry: $0.entry, date: $0.date) }
             #if DEBUG
             // `-edit <text prefix>` opens the editor for the first matching entry (screenshots can't tap).
+            // With `-journal` it's JournalView's to handle instead.
             .task {
                 let args = CommandLine.arguments
-                guard let i = args.firstIndex(of: "-edit"), i + 1 < args.count else { return }
+                guard !args.contains("-journal"), let i = args.firstIndex(of: "-edit"), i + 1 < args.count else { return }
                 editing = allEntries.first { $0.text.hasPrefix(args[i + 1]) }
             }
             #endif
