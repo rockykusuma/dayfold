@@ -23,7 +23,7 @@ struct SearchView: View {
         // ponytail: recomputed per keystroke (see SearchTests.largeStore). Debounce if stores grow large.
         let results = query.isEmpty ? [] : Search.results(entries, query: router.query)
         // Locked: no Journal section (its editor sheet hangs off the List, so it stays up).
-        let journalMatches = query.isEmpty || JournalLock.shared.isLocked ? [] : Search.journal(journal, query: router.query)
+        let journalMatches = query.isEmpty || JournalLock.shared.isHidden ? [] : Search.journal(journal, query: router.query)
         List {
             if query.isEmpty {
                 browse

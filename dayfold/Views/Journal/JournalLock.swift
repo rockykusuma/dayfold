@@ -1,10 +1,26 @@
 import SwiftUI
 import LocalAuthentication
 
-/// Optional Face ID / Touch ID / passcode lock for journal content. Relocks when the app goes to the background.
+/// Optional Face ID / Touch ID / passcode lock for journal content. Relocks when the app goes to the background
+/// (Mac: when it stops being the active app). While the app isn't active, content is also covered (`isObscured`).
 @Observable final class JournalLock {
     static let shared = JournalLock()
     static let storageKey = "journal.lock"
+
+    #if os(macOS)
+    // ponytail: observers live as long as the shared instance (the app); never removed.
+    private init() {
+        let center = NotificationCenter.default
+        center.addObserver(forName: NSApplication.didResignActiveNotification, object: nil, queue: .main) { _ in
+            MainActor.assumeIsolated { JournalLock.shared.appActive(false); JournalLock.shared.lock() }
+        }
+        center.addObserver(forName: NSApplication.didBecomeActiveNotification, object: nil, queue: .main) { _ in
+            MainActor.assumeIsolated { JournalLock.shared.appActive(true) }
+        }
+    }
+    #else
+    private init() {}
+    #endif
 
     /// The Settings toggle. Stored in UserDefaults; registered with Observation so locked views update when it flips.
     var isEnabled: Bool {
@@ -19,14 +35,26 @@ import LocalAuthentication
     }
     private(set) var isUnlocked = false
     var isLocked: Bool { isEnabled && !isUnlocked }
+    /// App not active (app switcher snapshot, Control Center, the auth prompt itself). Visual only: never clears `isUnlocked`.
+    private(set) var isObscured = false
+    /// What views check before showing journal content: locked, or the lock is on and the app isn't active.
+    var isHidden: Bool { isEnabled && (!isUnlocked || isObscured) }
+    /// An auth prompt is up; the Unlock button and the toggle wait.
+    private(set) var isAuthenticating = false
 
     func unlock() async -> Bool {
+        guard !isAuthenticating else { return false }
+        isAuthenticating = true
+        defer { isAuthenticating = false }
         let ok = (try? await LAContext().evaluatePolicy(.deviceOwnerAuthentication, localizedReason: "Unlock your journal")) ?? false
+        // Set after the prompt returns, so a lock() fired while the prompt made the app resign can't undo a success.
         if ok { isUnlocked = true }
         return ok
     }
 
     func lock() { isUnlocked = false }
+
+    func appActive(_ active: Bool) { isObscured = !active }
 
     static var toggleTitle: String {
         let context = LAContext()
@@ -47,11 +75,11 @@ extension View {
 
 private struct JournalLockCover: ViewModifier {
     func body(content: Content) -> some View {
-        let locked = JournalLock.shared.isLocked
+        let lock = JournalLock.shared
         content
-            .disabled(locked)              // drops keyboard focus; nothing behind the cover takes input
-            .accessibilityHidden(locked)
-            .overlay { if locked { JournalLockedView() } }
+            .disabled(lock.isLocked)       // drops keyboard focus; only when really locked, not just inactive
+            .accessibilityHidden(lock.isHidden)
+            .overlay { if lock.isHidden { JournalLockedView() } }
     }
 }
 
@@ -68,6 +96,7 @@ struct JournalLockedView: View {
             Button { Task { _ = await JournalLock.shared.unlock() } } label: {
                 Text("Unlock").foregroundStyle(Color.paper).frame(minWidth: 120)
             }
+            .disabled(JournalLock.shared.isAuthenticating)
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
             .padding(.top, 4)

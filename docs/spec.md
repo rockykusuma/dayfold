@@ -139,7 +139,8 @@ long-form journal view. (v0.2–v0.3; see README roadmap.)
 - 2026-10-25 Journal lock (Settings ▸ Journal, off by default; turning it on needs one successful Face ID / Touch ID /
   passcode check) gates everything: Journal tab shows "Journal locked" + "Unlock"; Day page Journal section, Search
   Journal section, Week page Notes and the Review reflection field are hidden. Relocks when the app goes to the
-  background (not on inactive — the auth prompt itself makes the app inactive). The lock is a cover, so an open
+  background (Mac: when it resigns active); while inactive the content is only covered (app-switcher snapshot), since
+  the auth prompt itself makes the app inactive. Turning the lock off while locked needs a successful unlock. The lock is a cover, so an open
   editor keeps its draft. Journal content is never in Share update / Copy, notifications or Services.
 - 2026-10-25 Photos are downscaled on import to a 2048 px long side (JPEG 0.8), up to 4 per entry, external storage.
 - Before the first TestFlight build: deploy the CloudKit schema (JournalEntry, JournalPhoto) to production in the CloudKit Console.

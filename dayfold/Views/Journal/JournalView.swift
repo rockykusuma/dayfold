@@ -95,7 +95,7 @@ struct JournalView: View {
         #if os(iOS)
         .toolbarTitleDisplayMode(.inline)
         .safeAreaInset(edge: .bottom) {   // the list insets its content, so the last card clears it
-            if !JournalLock.shared.isLocked { plusButton }
+            if !JournalLock.shared.isHidden { plusButton }
         }
         #else
         .toolbar {
@@ -103,7 +103,7 @@ struct JournalView: View {
                 Button { creating = true } label: { Label("New Entry", systemImage: "square.and.pencil") }
                     .keyboardShortcut("n", modifiers: [.command, .option])
                     .help("New Entry")
-                    .disabled(JournalLock.shared.isLocked)
+                    .disabled(JournalLock.shared.isHidden)
             }
         }
         #endif

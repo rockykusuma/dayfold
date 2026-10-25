@@ -21,7 +21,7 @@ struct WeekView: View {
     private var today: Date { calendar.startOfDay(for: Date()) }
     private var anchor: Date { calendar.date(byAdding: .day, value: 7 * weekOffset, to: Date()) ?? Date() }
     private var motion: Animation? { reduceMotion ? nil : .snappy }
-    private var locked: Bool { JournalLock.shared.isLocked }
+    private var locked: Bool { JournalLock.shared.isHidden }
 
     var body: some View {
         let review = WeekReview(entries: entries, journal: journal, containing: anchor, today: Date())

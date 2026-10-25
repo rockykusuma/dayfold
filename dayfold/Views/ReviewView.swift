@@ -308,7 +308,7 @@ struct ReviewView: View {
                     .padding(.top, 4)
             }
             // Review always reviews today, so the field is shown unless the journal is locked.
-            if !JournalLock.shared.isLocked {
+            if !JournalLock.shared.isHidden {
                 TextField("How did today go?", text: $note, axis: .vertical)
                     .lineLimit(1...3)
                     .font(.system(.body, design: .serif))

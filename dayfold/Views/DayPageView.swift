@@ -40,7 +40,7 @@ struct DayPageView: View {
     private var noon: Date { calendar.date(bySettingHour: 12, minute: 0, second: 0, of: day) ?? day }
     private var dayJournal: [JournalEntry] { journal.filter { calendar.isDate($0.date, inSameDayAs: day) } }
     /// Hidden while the journal is locked; its editor sheet hangs off the List, so hiding never dismisses it.
-    private var showJournal: Bool { !JournalLock.shared.isLocked && (!isFuture || !dayJournal.isEmpty) }
+    private var showJournal: Bool { !JournalLock.shared.isHidden && (!isFuture || !dayJournal.isEmpty) }
 
     private var items: [Entry] {
         DayPage.items(allEntries, on: day).filter { filter.includes($0.scope) }

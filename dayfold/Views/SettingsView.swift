@@ -58,6 +58,7 @@ struct SettingsView: View {
 
             Section("Journal") {
                 Toggle(JournalLock.toggleTitle, isOn: lockToggle)
+                    .disabled(JournalLock.shared.isAuthenticating)
             }
 
             Section("Notifications") {
@@ -119,15 +120,16 @@ struct SettingsView: View {
         )
     }
 
-    /// On needs one successful unlock (else it stays off); off needs none.
+    /// Turning on, or off while locked, needs one successful unlock; failing or cancelling leaves it as it was.
+    /// Off while already unlocked is free.
     private var lockToggle: Binding<Bool> {
         Binding(
             get: { JournalLock.shared.isEnabled },
             set: { on in
-                if on {
-                    Task { if await JournalLock.shared.unlock() { JournalLock.shared.isEnabled = true } }
-                } else {
-                    JournalLock.shared.isEnabled = false
+                let lock = JournalLock.shared
+                Task {
+                    if on || !lock.isUnlocked { guard await lock.unlock() else { return } }
+                    lock.isEnabled = on
                 }
             }
         )
