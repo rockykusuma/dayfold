@@ -17,6 +17,8 @@ struct JournalEditor: View {
     @State private var isBookmarked: Bool
     @State private var photos: [DraftPhoto]
     @State private var picked: [PhotosPickerItem] = []
+    /// Picked photos still loading/downscaling. While > 0, Done and the picker are disabled.
+    @State private var importing = 0
     @State private var confirmingDiscard = false
     @State private var confirmingDelete = false
     @FocusState private var bodyFocused: Bool
@@ -54,7 +56,7 @@ struct JournalEditor: View {
         Snapshot(date: date, title: title, text: text, isBookmarked: isBookmarked,
                  photos: photos.map { $0.model?.persistentModelID })
     }
-    private var hasChanges: Bool { current != initial }
+    private var hasChanges: Bool { importing > 0 || current != initial }
     private var isBlank: Bool {
         title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             && text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && photos.isEmpty
@@ -120,6 +122,7 @@ struct JournalEditor: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done", action: done)
+                        .disabled(importing > 0)
                         .confirmationDialog("Delete this entry?", isPresented: $confirmingDelete, titleVisibility: .visible) {
                             Button("Delete", role: .destructive) {
                                 if let entry { context.delete(entry) }
@@ -188,11 +191,16 @@ struct JournalEditor: View {
                 }
             }
         }
-        if photos.count < Self.maxPhotos {
-            PhotosPicker(selection: $picked, maxSelectionCount: Self.maxPhotos - photos.count, matching: .images) {
-                Label("Add Photos", systemImage: "photo.on.rectangle")
-                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                    .contentShape(Rectangle())
+        if photos.count + importing < Self.maxPhotos || importing > 0 {
+            HStack {
+                PhotosPicker(selection: $picked, maxSelectionCount: max(1, Self.maxPhotos - photos.count - importing),
+                             matching: .images) {
+                    Label("Add Photos", systemImage: "photo.on.rectangle")
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                        .contentShape(Rectangle())
+                }
+                .disabled(importing > 0)
+                if importing > 0 { ProgressView().controlSize(.small) }
             }
         }
     }
@@ -202,11 +210,13 @@ struct JournalEditor: View {
         let items = picked
         guard !items.isEmpty else { return }
         picked = []
+        importing += items.count
         Task {
             for item in items {
-                guard photos.count < Self.maxPhotos,
-                      let raw = try? await item.loadTransferable(type: Data.self),
-                      let small = await Task.detached(operation: { PhotoImport.downscaled(raw) }).value
+                defer { importing -= 1 }
+                guard let raw = try? await item.loadTransferable(type: Data.self),
+                      let small = await Task.detached(operation: { PhotoImport.downscaled(raw) }).value,
+                      photos.count < Self.maxPhotos   // re-checked right before the append
                 else { continue }
                 photos.append(DraftPhoto(data: small))
             }
