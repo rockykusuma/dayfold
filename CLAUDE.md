@@ -8,7 +8,9 @@ Owner drives Xcode; Claude writes code and reviews. Read `docs/spec.md` first.
 - `dayfold/Views/` — screens. `DayPageView.swift` is the root screen.
 - `dayfold/Views/SearchView.swift`, `SearchRouter.swift` — Search tab/sidebar; `EntryEditor.swift` — edit sheet (priority, repeat, tags, checklist).
 - `dayfold/Views/People/` — people list, person page, person editor, all-waiting.
-- `DayfoldCore/` — local Swift package, **no UI**: `Entry` model, `DayPage` rule, `Review` actions, `CaptureParser`, `Recurrence`, `Maintenance`, `Search`, `Tags`, `ChecklistItem`, Swift Testing tests. Language mode 5.
+- `DayfoldCore/` — local Swift package, **no UI**: `Entry` model, `DayPage` rule, `Review` actions, `CaptureParser`, `Recurrence`, `Maintenance`, `Search`, `Tags`, `ChecklistItem`, `Capture` (the one capture path), Swift Testing tests. Language mode 5.
+- `dayfold/Views/CaptureRouter.swift` — ⌘N "New Entry", `EntryScope.lastUsed`; `dayfold/AppStore.swift` — shared `ModelContainer` for intents/Services.
+- `dayfold/Intents/` — Siri/Shortcuts "Add to Dayfold". `dayfold/Mac/` — global hotkey (`HotKey`), `QuickCapturePanel`, `MacAppDelegate` (hotkey + Services provider).
 - `docs/spec.md` — v0.1 spec + decisions log. Append decisions there.
 
 ## Rules
@@ -23,10 +25,12 @@ Owner drives Xcode; Claude writes code and reviews. Read `docs/spec.md` first.
 - Bullet marks: ○ task (44pt tap target), – note. Age pill turns amber at 3+ days. Haptics via `.sensoryFeedback`; animations `.snappy`, respect Reduce Motion.
 - Debug only: launch with `-demo` for an in-memory sample day (no iCloud, no permission prompt); add `-review` to open Review (`-waiting` starts on the first waiting card), `-settings` for Settings, `-people` (iOS) for the People tab, `-person <Name>` (iOS) for that person's page, `-search [query]` for the Search tab/sidebar with an optional query, `-edit <text prefix>` to open the editor for the first matching entry. `DemoData.swift`.
 
-## State as of 2026-10-18 night
+## State as of 2026-10-25
 - v0.1 screens done: `DayPageView`, `ReviewView`, `SettingsView`, `ReviewReminder` (see Layout). Mac menu-bar capture: `Views/MenuBarCapture.swift`.
 - People & delegation done: `Person.swift`, `PeopleDirectory.swift`, `PersonPage.swift` (DayfoldCore), `Views/People/*`, `RootView.swift` (iPhone tabs, Mac sidebar). Debug flags: `-demo`, `-review`, `-settings`, `-people`.
 - Find & organise done: search, tags, checklists, repeating tasks, priority (see spec decisions log).
 - Before the first TestFlight build: deploy the CloudKit schema (Person, ChecklistItem + new Entry fields) to production in the CloudKit Console.
 - Builds Debug + Release on macOS + iOS. DayfoldCore tests: run from `DayfoldCore/` with `xcodebuild test -scheme DayfoldCore -destination platform=macOS`.
-- Not yet: ⌘N capture sheet, global hotkey for the menu-bar panel; notification permission is requested at first launch (consider asking contextually).
+- Capture everywhere done: one Core path (`Capture.add` / `addLines`), ⌘N, list paste/drop, Siri/Shortcuts, Mac hotkey panel, Services "Add to Dayfold". Spec: docs/superpowers/specs/2026-10-25-capture-everywhere-design.md
+- Owner checks pending: hotkey panel focus (toggle twice, click-away), Siri/Shortcuts run, Services menu appears (run `/System/Library/CoreServices/pbs -update` if not), ⌘N from Search/People.
+- Not yet: share extension and widgets (need targets + App Group); notification permission is requested at first launch (consider asking contextually).

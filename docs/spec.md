@@ -112,3 +112,10 @@ long-form journal view. (v0.2–v0.3; see README roadmap.)
   `showOn` when chosen), so pushing one occurrence doesn't move the series. Bare `weekly` still parses.
 - Before the first TestFlight build: deploy the CloudKit schema (ChecklistItem + Entry
   isPriority / repeatRaw / seriesID / checklist) to production in the CloudKit Console.
+- 2026-10-25 Capture everywhere: every entry point (bar, ⌘N, App Intent, hotkey panel, Services)
+  goes through one Core path, `Capture.add` / `addLines`. ⌘N "New Entry" replaces File ▸ New.
+  Pasting or dropping a multi-line list splits into one entry per line (markers stripped).
+  App Intent and Services use the last-used scope (`capture.lastScope`, default work) and today.
+  Mac global hotkey presets ⌃⌥Space / ⌃⌥D via Carbon, default set in Settings. Services menu
+  "Add to Dayfold" via `NSServices` + `NSApp.servicesProvider`. Share extension and widgets
+  deferred (need new targets + an App Group). Spec: docs/superpowers/specs/2026-10-25-capture-everywhere-design.md
