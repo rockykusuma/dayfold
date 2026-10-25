@@ -9,8 +9,17 @@ struct PageEditor: View {
     let focusTitle: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @FocusState private var focus: Field?
+    /// Draft for the title field, so a dropped character never stays visible; the model gets every real change.
+    @State private var title: String
 
     private enum Field { case title, body }
+
+    init(page: NotePage, allPages: [NotePage], focusTitle: Bool) {
+        self.page = page
+        self.allPages = allPages
+        self.focusTitle = focusTitle
+        _title = State(initialValue: page.title)
+    }
 
     private static let inserts: [(label: LocalizedStringKey, symbol: String, text: String)] = [
         ("Heading", "number", "# "),
@@ -21,12 +30,19 @@ struct PageEditor: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            TextField("Title", text: titleField)
+            TextField("Title", text: $title)
                 .font(.system(.largeTitle, design: .serif, weight: .bold))
                 .textFieldStyle(.plain)
                 .focused($focus, equals: .title)
                 .submitLabel(.next)
                 .onSubmit { focus = .body }
+                // `[`, `]`, `|` and newlines would break `[[links]]` to this page, so they're dropped as typed or pasted.
+                .onChange(of: title) { _, new in
+                    let clean = new.filter { !"[]|".contains($0) && !$0.isNewline }
+                    if clean != new { title = clean }
+                    set(\.title, clean)
+                }
+                .onChange(of: page.title) { _, stored in if stored != title { title = stored } }   // synced from elsewhere
             if hasDuplicateTitle {
                 Text("Another page has this title")
                     .font(.caption)
@@ -129,11 +145,6 @@ struct PageEditor: View {
         guard page[keyPath: key] != value else { return }
         page[keyPath: key] = value
         page.updatedAt = Date()
-    }
-
-    /// `[`, `]`, `|` and newlines would break `[[links]]` to this page, so they're dropped as typed or pasted.
-    private var titleField: Binding<String> {
-        Binding(get: { page.title }, set: { set(\.title, $0.filter { !"[]|".contains($0) && !$0.isNewline }) })
     }
 
     private var hasDuplicateTitle: Bool {

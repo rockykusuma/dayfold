@@ -98,6 +98,7 @@ struct PageView: View {
         .onChange(of: scenePhase) { _, phase in
             guard phase != .active, editing else { return }
             PageLinks.rename(from: startTitle, to: page.title, in: allPages)
+            try? context.save()   // don't wait for autosave: the app can be killed from here
             if !page.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { startTitle = page.title }
         }
     }

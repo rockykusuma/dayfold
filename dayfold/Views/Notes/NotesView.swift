@@ -43,7 +43,10 @@ struct NotesView: View {
                     if !pinned.isEmpty {
                         Section { ForEach(pinned) { row($0) } } header: { header("Pinned") }
                     }
-                    Section { ForEach(Pages.sorted(pages.filter { $0.parent == nil && !$0.isPinned })) { row($0) } } header: { header("Pages") }
+                    let top = Pages.sorted(pages.filter { $0.parent == nil && !$0.isPinned })
+                    if !top.isEmpty {
+                        Section { ForEach(top) { row($0) } } header: { header("Pages") }
+                    }
                 }
             }
             .listStyle(.plain)
