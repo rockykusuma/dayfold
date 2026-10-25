@@ -154,6 +154,41 @@ public enum PageFormat {
         return PageEdit(text: String(c), selection: edit.selection.lowerBound + 4..<hi)
     }
 
+    /// Return on a list line: `new` is `old` with one line break typed at `at` (the caret says where: next to another
+    /// break the text alone can't). The new line gets the same marker (numbered +1, checklist unchecked, quote continues);
+    /// Return on an empty item, with nothing after the caret, ends the list instead. nil when the change is anything else.
+    public static func continueList(old: String, new: String, at: Int) -> PageEdit? {
+        let o = Array(old), n = Array(new)
+        guard n.count == o.count + 1, (0..<n.count).contains(at), n[at].isNewline,
+              Array(n[..<at]) == Array(o[..<at]), Array(n[(at + 1)...]) == Array(o[at...]) else { return nil }
+        let start = o[..<at].lastIndex(where: \.isNewline).map { $0 + 1 } ?? 0
+        let line = String(o[start..<at])
+        let rest = o[at...].prefix { !$0.isNewline }
+        let spaces = String(repeating: " ", count: line.prefix { $0 == " " }.count)
+        let marker: String, text: String
+        if let box = PageMarkup.checkbox(line) {
+            (marker, text) = (spaces + "- [ ] ", box.text)
+        } else if let item = PageMarkup.bullet(line) {
+            (marker, text) = (spaces + String(line.dropFirst(spaces.count).prefix(2)), item.text)
+        } else if let item = PageMarkup.numbered(line) {
+            let delimiter = line.dropFirst(spaces.count + String(item.number).count).prefix(1)
+            (marker, text) = (spaces + "\(item.number + 1)\(delimiter) ", item.text)
+        } else if line.dropFirst(spaces.count).hasPrefix("> ") {
+            (marker, text) = (spaces + "> ", String(line.dropFirst(spaces.count + 2)))
+        } else {
+            return nil
+        }
+        if text.trimmingCharacters(in: .whitespaces).isEmpty, rest.isEmpty {
+            var out = o
+            out.removeSubrange(start..<at)
+            return PageEdit(text: String(out), selection: start..<start)
+        }
+        var out = n
+        out.insert(contentsOf: marker, at: at + 1)
+        let caret = at + 1 + marker.count
+        return PageEdit(text: String(out), selection: caret..<caret)
+    }
+
     // MARK: Lines
 
     /// The line's style, its leading spaces, and where its text starts after any marker.

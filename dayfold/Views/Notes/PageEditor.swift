@@ -70,10 +70,27 @@ struct PageEditor: View {
     @ViewBuilder
     private var bodyEditor: some View {
         if #available(iOS 18, macOS 15, *) {
-            TextEditor(text: field(\.body), selection: textSelection)
+            TextEditor(text: bodyContinuingLists, selection: textSelection)
         } else {
             TextEditor(text: field(\.body))
         }
+    }
+
+    /// The body, plus Notes' Return in a list: the next line gets the same marker; Return on an empty item ends the list.
+    /// Decided on the next turn of the main queue: the editor reports the caret separately, in either order,
+    /// and the caret is what says where the Return went.
+    private var bodyContinuingLists: Binding<String> {
+        Binding(get: { page.body }, set: { new in
+            let old = page.body
+            set(\.body, new)
+            guard new.count == old.count + 1 else { return }
+            DispatchQueue.main.async {
+                guard page.body == new, let c = caret, c.isEmpty, c.lowerBound > 0,
+                      let edit = PageFormat.continueList(old: old, new: new, at: c.lowerBound - 1) else { return }
+                set(\.body, edit.text)
+                caret = edit.selection
+            }
+        })
     }
 
     /// `caret` as the editor's selection; multi-selections (Mac ⌘-drag) are ignored.

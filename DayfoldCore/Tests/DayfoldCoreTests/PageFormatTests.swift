@@ -102,4 +102,44 @@ struct PageFormatTests {
     @Test func crlfLinesKeepTheirBreaks() {
         #expect(show(PageFormat.setStyle(.bullet, e("⟨a\r\nb⟩"))) == "- ⟨a\r\n- b⟩")
     }
+
+    /// `old` with Return typed at `‸`.
+    private func returnAt(_ s: String) -> PageEdit? {
+        let at = e(s).selection.lowerBound
+        var c = Array(e(s).text)
+        let old = String(c)
+        c.insert("\n", at: at)
+        return PageFormat.continueList(old: old, new: String(c), at: at)
+    }
+
+    @Test func returnContinuesLists() {
+        #expect(returnAt("- milk‸").map(show) == "- milk\n- ‸")
+        #expect(returnAt("  * a‸").map(show) == "  * a\n  * ‸")
+        #expect(returnAt("1. a‸\nnext").map(show) == "1. a\n2. ‸\nnext")
+        #expect(returnAt("9) a‸").map(show) == "9) a\n10) ‸")
+        #expect(returnAt("- [x] done‸").map(show) == "- [x] done\n- [ ] ‸")
+        #expect(returnAt("> said‸").map(show) == "> said\n> ‸")
+    }
+
+    @Test func returnMidItemCarriesTheRest() {
+        #expect(returnAt("- mi‸lk").map(show) == "- mi\n- ‸lk")
+    }
+
+    @Test func returnOnEmptyItemEndsTheList() {
+        #expect(returnAt("- a\n- ‸").map(show) == "- a\n‸")
+        #expect(returnAt("- a\n  2. ‸\nb").map(show) == "- a\n‸\nb")
+        #expect(returnAt("- [ ] ‸").map(show) == "‸")
+    }
+
+    @Test func returnElsewhereIsLeftAlone() {
+        #expect(returnAt("plain‸") == nil)
+        #expect(returnAt("# Title‸") == nil)
+        #expect(returnAt("```\n- code‸") != nil)   // ponytail: fences aren't tracked; a list-looking code line continues
+        #expect(returnAt("- a\n‸\nb") == nil)   // Return on the blank line after a list adds space, no bullet
+        #expect(returnAt("- a\n‸b") == nil)
+        #expect(PageFormat.continueList(old: "- a", new: "- ab", at: 3) == nil)
+        #expect(PageFormat.continueList(old: "- a", new: "- a\n\n", at: 3) == nil)   // a paste, not one Return
+        #expect(PageFormat.continueList(old: "- a", new: "- a\n", at: 9) == nil)
+    }
 }
+
