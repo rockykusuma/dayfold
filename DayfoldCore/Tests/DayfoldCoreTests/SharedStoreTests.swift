@@ -40,9 +40,21 @@ struct SharedStoreTests {
         #expect(fm.fileExists(atPath: old.path))
     }
 
-    @Test func nothingToMoveUsesTheGroup() {
-        let old = tempDir().appending(path: "default.store"), new = tempDir().appending(path: "default.store")
+    @Test func nothingToMoveUsesTheGroupAndMakesItsFolder() {
+        let old = tempDir().appending(path: "default.store"), new = tempDir().appending(path: "Library/Support/default.store")
         #expect(SharedStore.moveStore(from: old, to: new) == new)
+        #expect(fm.fileExists(atPath: new.deletingLastPathComponent().path))
+    }
+
+    @Test func anInterruptedCopyIsRedone() throws {
+        let old = tempDir().appending(path: "default.store"), new = tempDir().appending(path: "default.store")
+        try Data("old".utf8).write(to: old)
+        try Data("fresh wal".utf8).write(to: old.deletingLastPathComponent().appending(path: "default.store-wal"))
+        // Killed mid-copy last time: a sidecar landed, the main file didn't.
+        try Data("stale wal".utf8).write(to: new.deletingLastPathComponent().appending(path: "default.store-wal"))
+        #expect(SharedStore.moveStore(from: old, to: new) == new)
+        #expect(try String(contentsOf: new.deletingLastPathComponent().appending(path: "default.store-wal"), encoding: .utf8) == "fresh wal")
+        #expect(try String(contentsOf: new, encoding: .utf8) == "old")
     }
 
     @Test func aFailedCopyKeepsTheOldStore() throws {

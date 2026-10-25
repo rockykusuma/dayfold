@@ -45,7 +45,10 @@ struct DayfoldApp: App {
             // Cover journal content whenever not active (before the app-switcher snapshot); lock only on
             // .background, since the Face ID prompt itself makes the app inactive. Mac: JournalLock watches resign-active.
             JournalLock.shared.appActive(phase == .active)
-            if phase == .background { JournalLock.shared.lock() }
+            if phase == .background {
+                JournalLock.shared.lock()
+                WidgetCenter.shared.reloadAllTimelines()   // picks up changes synced in from other devices
+            }
         }
 
         #if os(macOS)

@@ -21,17 +21,19 @@ public enum SharedStore {
 
     /// Copies a pre-App-Group store into the group once, then removes the old files. Both URLs name the same file
     /// (`default.store`); SQLite's `-wal` / `-shm` and `.default_SUPPORT` (external photo data) come along.
+    /// The main file is copied last, so its presence means a finished copy; leftovers from an interrupted one are replaced.
     /// Returns where the store is now: `new` on success or when there was nothing to move; `old` if copying failed
     /// (the old files stay untouched and the partial copy is removed, so nothing is lost).
     @discardableResult
     public static func moveStore(from old: URL, to new: URL, fileManager fm: FileManager = .default) -> URL {
+        let toDir = new.deletingLastPathComponent()
+        try? fm.createDirectory(at: toDir, withIntermediateDirectories: true)   // a fresh group container has none
         guard fm.fileExists(atPath: old.path), !fm.fileExists(atPath: new.path) else { return new }
-        let name = old.lastPathComponent
-        let fromDir = old.deletingLastPathComponent(), toDir = new.deletingLastPathComponent()
-        let parts = [name, name + "-wal", name + "-shm", "." + old.deletingPathExtension().lastPathComponent + "_SUPPORT"]
-            .filter { fm.fileExists(atPath: fromDir.appending(path: $0).path) }
+        let name = old.lastPathComponent, fromDir = old.deletingLastPathComponent()
+        let sidecars = [name + "-wal", name + "-shm", "." + old.deletingPathExtension().lastPathComponent + "_SUPPORT"]
+        for part in sidecars { try? fm.removeItem(at: toDir.appending(path: part)) }   // from an interrupted copy
+        let parts = (sidecars + [name]).filter { fm.fileExists(atPath: fromDir.appending(path: $0).path) }
         do {
-            try fm.createDirectory(at: toDir, withIntermediateDirectories: true)
             for part in parts { try fm.copyItem(at: fromDir.appending(path: part), to: toDir.appending(path: part)) }
         } catch {
             for part in parts { try? fm.removeItem(at: toDir.appending(path: part)) }

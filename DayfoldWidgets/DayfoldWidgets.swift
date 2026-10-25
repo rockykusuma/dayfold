@@ -36,7 +36,8 @@ struct TodayProvider: TimelineProvider {
         let now = Date.now
         let midnight = Calendar.current.date(byAdding: .day, value: 1, to: Calendar.current.startOfDay(for: now))!
         // Read-only and without CloudKit: the app owns syncing; the widget only looks.
-        guard let url = SharedStore.groupURL,
+        // Never create the store: the app moves its old one into the group on first launch only if none is there.
+        guard let url = SharedStore.groupURL, FileManager.default.fileExists(atPath: url.path),
               let container = try? ModelContainer(for: Schema(SharedStore.models),
                                                   configurations: ModelConfiguration(url: url, allowsSave: false,
                                                                                      cloudKitDatabase: .none)),
