@@ -98,6 +98,7 @@ long-form journal view. (v0.2–v0.3; see README roadmap.)
   via from / to / about; to:name + Delegate action; stale waiting items join evening
   Review after N days (default 3). iPhone tabs, Mac sidebar. Spec:
   docs/superpowers/specs/2026-10-18-people-delegation-design.md
+- 2026-10-26 Notification permission is asked in context, not at first launch: after the first Review ("Remind Me at <time>" on the All folded screen, shown only while permission is undecided and some reminder days are set) or in Settings (Turn On, or changing the review time / days). Launch only reschedules when already allowed.
 - Before the first TestFlight build: deploy the CloudKit schema (Person + new Entry fields)
   to production in the CloudKit Console.
 - 2026-10-19 Find & organise: search (AND tokens, #tag, @person, is: filters), visible tags,
@@ -110,6 +111,7 @@ long-form journal view. (v0.2–v0.3; see README roadmap.)
   day) so they never look old; a re-delegated copy's waiting clock starts then too.
 - 2026-10-19 Weekly repeats are anchored like monthly (`weekly:<weekday>`, 1 = Sunday, set from
   `showOn` when chosen), so pushing one occurrence doesn't move the series. Bare `weekly` still parses.
+- 2026-10-26 Notification permission is asked in context, not at first launch: after the first Review ("Remind Me at <time>" on the All folded screen, shown only while permission is undecided and some reminder days are set) or in Settings (Turn On, or changing the review time / days). Launch only reschedules when already allowed.
 - Before the first TestFlight build: deploy the CloudKit schema (ChecklistItem + Entry
   isPriority / repeatRaw / seriesID / checklist) to production in the CloudKit Console.
 - 2026-10-25 Capture everywhere: every entry point (bar, ⌘N, App Intent, hotkey panel, Services)
@@ -126,6 +128,7 @@ long-form journal view. (v0.2–v0.3; see README roadmap.)
   Waiting on show only for the current week; past weeks show Done, the dropped count and notes. Day notes are
   never in the update text. Same-day notes from two devices are merged by `Maintenance.tidy`. No streaks,
   scores or percentages. Spec: docs/superpowers/specs/2026-10-25-journal-insights-design.md
+- 2026-10-26 Notification permission is asked in context, not at first launch: after the first Review ("Remind Me at <time>" on the All folded screen, shown only while permission is undecided and some reminder days are set) or in Settings (Turn On, or changing the review time / days). Launch only reschedules when already allowed.
 - Before the first TestFlight build: deploy the CloudKit schema (DayNote) to production in the CloudKit Console.
 - 2026-10-25 Update text (Share/Copy) lists work-scoped entries only; the Week page itself shows everything.
 - 2026-10-25 Week page browses by a week offset from now (not a stored date), so it stays correct across midnight.
@@ -151,6 +154,7 @@ long-form journal view. (v0.2–v0.3; see README roadmap.)
   passcode the lock can't be turned on (toggle disabled, "Set a device passcode to lock your journal.") and reads as off.
 - 2026-10-25 The lock toggle shows the tapped value while the auth prompt is up and settles on the result (reverts on
   failure or cancel), instead of flicking back and forth.
+- 2026-10-26 Notification permission is asked in context, not at first launch: after the first Review ("Remind Me at <time>" on the All folded screen, shown only while permission is undecided and some reminder days are set) or in Settings (Turn On, or changing the review time / days). Launch only reschedules when already allowed.
 - Before the first TestFlight build: deploy the CloudKit schema (JournalEntry, JournalPhoto) to production in the CloudKit Console.
 - 2026-10-25: Journal lives only in its own tab — the Day page shows no journal section (owner request). Search, the Week page and Review's reflection field still use journal entries.
 - 2026-10-25 Notes (wiki): pages (`NotePage`) in light Markdown, own tab; nothing on the Day page. Spec: docs/superpowers/specs/2026-10-25-notes-wiki-design.md
@@ -164,4 +168,5 @@ long-form journal view. (v0.2–v0.3; see README roadmap.)
 - 2026-10-25 Mac: pages live in the sidebar ("Pages" section, pinned then the top-level tree with subpages, collapsible, "+" New Page); selecting one opens it in the detail, so moving between pages is one click. iPhone keeps the Notes list: no room for a sidebar, and an expandable list there put two arrows on one row.
 - 2026-10-25 Notes formatting follows Apple Notes but stays Markdown (pages sync and share as plain text): a format bar with Text Style (Title `#`, Heading `##`, Subheading `###`, Body, Monostyled = code block), Bold `**`, Italic `_` (not `*`, so it never collides with bold), Underline `++text++` (Markdown has none; rendered by the app), Strikethrough `~~`, bulleted / numbered / checklist, block quote, indent / outdent, link, divider. It acts on the selection (iOS 18 / macOS 15 `TextEditor` selection); on iOS 17 / macOS 14 it applies at the end of the text. Not copied from Notes: dashed lists (same as bullets in Markdown), tables, colours / highlight, live rich-text editing.
 - 2026-10-25 Return in a Notes list continues it like Apple Notes: the next line gets the same marker (bullet keeps `-`/`*` and indent, numbered +1 keeping `.`/`)`, checklist unchecked, quote); Return on an empty item with nothing after the caret ends the list. Needs the editor caret (iOS 18 / macOS 15).
+- 2026-10-26 Notification permission is asked in context, not at first launch: after the first Review ("Remind Me at <time>" on the All folded screen, shown only while permission is undecided and some reminder days are set) or in Settings (Turn On, or changing the review time / days). Launch only reschedules when already allowed.
 - Before the first TestFlight build: deploy the CloudKit schema (NotePage) to production in the CloudKit Console.

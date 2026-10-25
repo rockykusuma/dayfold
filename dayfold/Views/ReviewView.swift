@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import UserNotifications
 import DayfoldCore
 
 /// Evening Review: one card per active task, four choices each.
@@ -18,6 +19,8 @@ struct ReviewView: View {
     @State private var note = ""
     @State private var savedNote = "" // what's stored; save only when `note` differs
     @State private var noteLoaded = false
+    /// Not yet asked: the summary offers the evening reminder (the app never asks at launch).
+    @State private var canOfferReminder = false
     @FocusState private var noteFocused: Bool
 
     private let calendar = Calendar.current
@@ -322,6 +325,14 @@ struct ReviewView: View {
                     .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.separator, lineWidth: 0.5))
                     .padding(.top, 12)
             }
+            if canOfferReminder {
+                Button("Remind Me at \(ReviewReminder.timeText)", systemImage: "bell") {
+                    canOfferReminder = false
+                    Task { await ReviewReminder.shared.schedule(ask: true) }
+                }
+                .frame(minHeight: 44)
+                .padding(.top, 4)
+            }
             Button { saveNote(); dismiss() } label: { Text("Close").foregroundStyle(Color.paper) }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
@@ -339,6 +350,11 @@ struct ReviewView: View {
             noteLoaded = true
         }
         .onDisappear(perform: saveNote)
+        .task {
+            let status = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
+            let days = UserDefaults.standard.string(forKey: ReviewReminder.weekdaysKey) ?? ReviewReminder.defaultWeekdays
+            canOfferReminder = status == .notDetermined && !days.isEmpty
+        }
     }
 
     /// Writes only when the text changed, so closing untouched never creates or rewrites the reflection.

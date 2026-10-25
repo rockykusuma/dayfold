@@ -80,7 +80,7 @@ struct SettingsView: View {
                 if notifications == .notDetermined {
                     Button("Turn On Notifications") {
                         Task {
-                            await ReviewReminder.shared.schedule() // asks for permission, then schedules
+                            await ReviewReminder.shared.schedule(ask: true)
                             await refresh()
                         }
                     }
@@ -107,7 +107,7 @@ struct SettingsView: View {
         .task { await refresh() }
         .onChange(of: "\(hour):\(minute):\(weekdays)") {
             Task {
-                await ReviewReminder.shared.schedule()
+                await ReviewReminder.shared.schedule(ask: !weekdays.isEmpty)   // setting a time is wanting the reminder
                 await refresh()
             }
         }

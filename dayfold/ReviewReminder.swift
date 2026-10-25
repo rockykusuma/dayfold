@@ -16,14 +16,19 @@ final class ReviewReminder: NSObject, UNUserNotificationCenterDelegate {
 
     /// Schedules from the stored settings (default 18:30 Mon–Fri). No weekdays = no reminder.
     /// Safe to call repeatedly: it replaces whatever was scheduled before.
-    func schedule() async {
+    /// Only `ask` shows the permission prompt (Settings, Review's offer); otherwise it schedules only if already allowed.
+    func schedule(ask: Bool = false) async {
         let defaults = UserDefaults.standard
         let hour = defaults.object(forKey: Self.hourKey) as? Int ?? Self.defaultHour
         let minute = defaults.object(forKey: Self.minuteKey) as? Int ?? Self.defaultMinute
         let weekdays = Set((defaults.string(forKey: Self.weekdaysKey) ?? Self.defaultWeekdays).compactMap { Int(String($0)) })
 
         let center = UNUserNotificationCenter.current()
-        guard (try? await center.requestAuthorization(options: [.alert, .sound])) == true else { return }
+        if ask {
+            guard (try? await center.requestAuthorization(options: [.alert, .sound])) == true else { return }
+        } else {
+            guard [.authorized, .provisional].contains(await center.notificationSettings().authorizationStatus) else { return }
+        }
 
         center.removePendingNotificationRequests(withIdentifiers: (1...7).map { "review.\($0)" })
 
@@ -39,6 +44,14 @@ final class ReviewReminder: NSObject, UNUserNotificationCenterDelegate {
             )
             try? await center.add(UNNotificationRequest(identifier: "review.\(weekday)", content: content, trigger: trigger))
         }
+    }
+
+    /// The stored time, for "Remind me at 6:30 PM".
+    static var timeText: String {
+        let defaults = UserDefaults.standard
+        let c = DateComponents(hour: defaults.object(forKey: hourKey) as? Int ?? defaultHour,
+                               minute: defaults.object(forKey: minuteKey) as? Int ?? defaultMinute)
+        return Calendar.current.date(from: c)?.formatted(date: .omitted, time: .shortened) ?? ""
     }
 
     // Tapped (cold or warm launch): open Review.
