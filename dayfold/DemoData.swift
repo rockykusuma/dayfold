@@ -120,6 +120,49 @@ enum DemoData {
                 "Arjun's diagram finally made the conflict rules click.", photos: [(0.36, 0.52, 0.66)])
         journal(9, 12, 10, "Lunch by the lake with the team. Sam talked about wanting more platform work.",
                 photos: [(0.55, 0.68, 0.45), (0.85, 0.66, 0.42)])
+
+        // Notes (wiki): a small linked tree, one pinned page, one subpage.
+        func page(_ title: String, _ body: String, pinned: Bool = false, daysAgo: Int) -> NotePage {
+            let when = at(daysAgo, 10, 0)
+            let p = NotePage(title: title, body: body, isPinned: pinned, createdAt: when, updatedAt: when)
+            ctx.insert(p)
+            return p
+        }
+        _ = page("Release process", """
+            Every other Thursday, owned by the on-call lead.
+
+            ## Before the cut
+            - Freeze the main branch at noon
+            - Run the dry-run and check the migration checklist
+              - Rollback plan signed off
+            - Post the release notes draft in #platform
+
+            ## Ship it
+            ```
+            ./scripts/release --tag v2.4
+            ```
+
+            > If in doubt, don't ship on a Friday.
+            """, daysAgo: 3)
+        _ = page("Team — Platform", """
+            Owns sync, on-call tooling and the release train.
+
+            ## Links
+            - [[Release process]]
+            - [[Onboarding]] for new joiners
+            """, pinned: true, daysAgo: 1)
+        let onboarding = page("Onboarding", """
+            First week for anyone joining the team.
+
+            - [x] Laptop and accounts
+            - [ ] Shadow an on-call shift
+            - [ ] Ship a small fix
+            """, daysAgo: 6)
+        let laptop = page("Laptop setup", """
+            Install Xcode and the command line tools, then clone the repo.
+            Read [[Release process]] before your first ship.
+            """, daysAgo: 6)
+        laptop.parent = onboarding
         return container
     }
 

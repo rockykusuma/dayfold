@@ -153,3 +153,11 @@ long-form journal view. (v0.2–v0.3; see README roadmap.)
   failure or cancel), instead of flicking back and forth.
 - Before the first TestFlight build: deploy the CloudKit schema (JournalEntry, JournalPhoto) to production in the CloudKit Console.
 - 2026-10-25: Journal lives only in its own tab — the Day page shows no journal section (owner request). Search, the Week page and Review's reflection field still use journal entries.
+- 2026-10-25 Notes (wiki): pages (`NotePage`) in light Markdown, own tab; nothing on the Day page. Spec: docs/superpowers/specs/2026-10-25-notes-wiki-design.md
+- 2026-10-25 Wiki links are by title (`[[Page title]]`, case-insensitive). Renaming a page rewrites every `[[Old]]` link to it when editing ends; a case-only rename changes nothing. A cleared title keeps the old one.
+- 2026-10-25 Deleting a page never deletes its subpages: they move up to the deleted page's parent (top level if none).
+- 2026-10-25 Blank pages (no title, no body, no subpages) are removed when left, so "+" never leaves "Untitled" litter.
+- 2026-10-25 Tapping a link to a missing page asks "Create page “<Title>”?" and creates it top level (easy to find; Move… files it later).
+- 2026-10-25 The editor's insert row (Heading, Bullet, Checkbox, Link) appends a line at the end of the body: SwiftUI's `TextEditor` has no cursor API on iOS 17 / macOS 14.
+- 2026-10-25 On compact width the page toolbar shows More + Edit only (Pin and Share move into More): four items pushed Edit off an iPhone SE's bar.
+- Before the first TestFlight build: deploy the CloudKit schema (NotePage) to production in the CloudKit Console.

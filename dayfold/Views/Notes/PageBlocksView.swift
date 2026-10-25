@@ -49,6 +49,7 @@ struct PageBlocksView: View {
                     .strikethrough(checked, color: .secondary)
                     .accessibilityHidden(true)
             }
+            .padding(.vertical, -5)   // 44pt rows sit flush (not 54pt apart), so a checklist reads like the bullets
         case .quote(let text):
             Self.inline(text)
                 .foregroundStyle(.secondary)

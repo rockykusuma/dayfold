@@ -21,6 +21,12 @@ struct PageView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var context
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    #if os(iOS)
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    private var compact: Bool { sizeClass == .compact }
+    #else
+    private let compact = false
+    #endif
     // ponytail: every page, for links, backlinks, rename and Move…. Fine for a personal wiki; add predicates if it grows huge.
     @Query private var allPages: [NotePage]
     @State private var editing: Bool
@@ -97,10 +103,13 @@ struct PageView: View {
         let children = page.sortedChildren.filter { !$0.isDeleted }
         let backlinks = PageLinks.backlinks(to: page, in: allPages)
         return VStack(alignment: .leading, spacing: 16) {
-            if !crumbs.isEmpty { breadcrumb(crumbs) }
-            Text(page.displayTitle)
-                .font(.system(.largeTitle, design: .serif, weight: .bold))
-                .accessibilityAddTraits(.isHeader)
+            // Spacing 0: the breadcrumb's 44pt tap height already gives it room above the title.
+            VStack(alignment: .leading, spacing: 0) {
+                if !crumbs.isEmpty { breadcrumb(crumbs) }
+                Text(page.displayTitle)
+                    .font(.system(.largeTitle, design: .serif, weight: .bold))
+                    .accessibilityAddTraits(.isHeader)
+            }
             if blocks.isEmpty {
                 Text("Tap Edit to write.")
                     .font(.system(.body, design: .serif))
@@ -176,15 +185,10 @@ struct PageView: View {
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
         ToolbarItemGroup(placement: .primaryAction) {
-            Button {
-                page.isPinned.toggle()
-            } label: {
-                Label(page.isPinned ? "Unpin" : "Pin", systemImage: page.isPinned ? "pin.slash" : "pin")
-            }
-            ShareLink(item: "# \(page.displayTitle)\n\n\(page.body)") {
-                Label("Share", systemImage: "square.and.arrow.up")
-            }
+            // Four items push Edit off an iPhone SE's bar: on compact width Pin and Share live in More.
+            if !compact { pinButton; shareLink }
             Menu {
+                if compact { pinButton; shareLink }
                 Button { moving = true } label: { Label("Move…", systemImage: "folder") }
                 Button(role: .destructive) { confirmingDelete = true } label: { Label("Delete Page", systemImage: "trash") }
             } label: {
@@ -193,6 +197,20 @@ struct PageView: View {
             Button(editing ? "Done" : "Edit") {
                 editing ? finishEditing(pop: true) : beginEditing()
             }
+        }
+    }
+
+    private var pinButton: some View {
+        Button {
+            page.isPinned.toggle()
+        } label: {
+            Label(page.isPinned ? "Unpin" : "Pin", systemImage: page.isPinned ? "pin.slash" : "pin")
+        }
+    }
+
+    private var shareLink: some View {
+        ShareLink(item: "# \(page.displayTitle)\n\n\(page.body)") {
+            Label("Share", systemImage: "square.and.arrow.up")
         }
     }
 
