@@ -89,10 +89,15 @@ struct CaptureTests {
     }
 
     @Test func linesParse() throws {
-        let text = "Call Sam from:Meera tomorrow #ops"
+        let text = "Call Sam from:Meera @tomorrow #ops"
         let e = try #require(lines(text).first)
         #expect(e.link == .from && e.tags == ["ops"])
+        #expect(e.dueOn != nil)
         #expect(e.dueOn == CaptureParser.parse(text, now: now, calendar: ist).dueOn)
+    }
+
+    @Test func markdownChecklist() {
+        #expect(lines("- [ ] Call Sam\n* [x] Done thing\n- [link](url)").map(\.text) == ["Call Sam", "Done thing", "[link](url)"])
     }
 
     @Test func linesKeepLink() {

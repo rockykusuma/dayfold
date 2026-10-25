@@ -33,7 +33,10 @@ struct AddToDayfoldIntent: AppIntent {
         let context = AppStore.container.mainContext
         let entries = Capture.addLines(text, kind: kind.entryKind, scope: .lastUsed, day: Date(), in: context)
         guard let first = entries.first else { throw NothingToAdd() }
-        try context.save()
+        do { try context.save() } catch {
+            entries.forEach(context.delete)   // not rollback(): that would drop the UI's unsaved edits
+            throw error
+        }
         if entries.count == 1 {
             return .result(dialog: "Added “\(first.text)” to today.")
         }

@@ -119,3 +119,4 @@ long-form journal view. (v0.2–v0.3; see README roadmap.)
   Mac global hotkey presets ⌃⌥Space / ⌃⌥D via Carbon, default set in Settings. Services menu
   "Add to Dayfold" via `NSServices` + `NSApp.servicesProvider`. Share extension and widgets
   deferred (need new targets + an App Group). Spec: docs/superpowers/specs/2026-10-25-capture-everywhere-design.md
+- Quick-capture hotkey default is ⌃⌥D, not ⌃⌥Space: ⌃⌥Space is macOS's "Select next source in Input menu" and wins on Macs with 2+ input sources (overrides the design doc).

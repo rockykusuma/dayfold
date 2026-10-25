@@ -74,12 +74,10 @@ struct DayPageView: View {
             .scrollDismissesKeyboard(.interactively)
             .dropDestination(for: String.self) { items, _ in
                 guard !isPast else { return false }
-                var added = false
-                withAnimation(.snappy) {
-                    added = !Capture.addLines(items.joined(separator: "\n"), scope: filter.defaultScope ?? .lastUsed,
-                                              day: day, in: context).isEmpty
+                return withAnimation(.snappy) {
+                    !Capture.addLines(items.joined(separator: "\n"), scope: filter.defaultScope ?? .lastUsed,
+                                      day: day, in: context).isEmpty
                 }
-                return added
             }
             .onAppear(perform: consumeCaptureRequest)
             .onChange(of: CaptureRouter.shared.requests, consumeCaptureRequest)

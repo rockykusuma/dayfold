@@ -51,7 +51,7 @@ struct MenuBarCapture: View {
             Divider()
 
             HStack {
-                Button("Open Dayfold") { showMainWindow() }
+                Button("Open Dayfold") { openDayfold() }
                     .keyboardShortcut("o", modifiers: .command)
                 Spacer()
                 Button("Quit") { NSApp.terminate(nil) }
@@ -72,13 +72,6 @@ struct MenuBarCapture: View {
     }
 
     /// Bring the existing day-page window forward; open one only if it was closed.
-    private func showMainWindow() {
-        NSApp.activate()
-        if let window = NSApp.windows.first(where: { $0.canBecomeMain }) {
-            window.makeKeyAndOrderFront(nil)
-        } else {
-            openWindow(id: "main")
-        }
-    }
+    private func openDayfold() { showMainWindow { openWindow(id: "main") } }
 }
 #endif

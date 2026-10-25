@@ -33,7 +33,7 @@ struct CaptureCommands: Commands {
         CommandGroup(replacing: .newItem) {
             Button("New Entry") {
                 #if os(macOS)
-                if !NSApp.windows.contains(where: { $0.canBecomeMain && $0.isVisible }) { openWindow(id: "main") }
+                showMainWindow { openWindow(id: "main") }
                 #endif
                 CaptureRouter.shared.request()
             }
@@ -41,3 +41,18 @@ struct CaptureCommands: Commands {
         }
     }
 }
+
+#if os(macOS)
+import AppKit
+
+/// Brings the day-page window forward (restoring it if minimized); calls `open` if it was closed.
+/// SwiftUI names `WindowGroup(id: "main")` windows "main-…", which excludes Settings and the capture panel.
+func showMainWindow(orOpen open: () -> Void) {
+    NSApp.activate()
+    if let window = NSApp.windows.first(where: { $0.identifier?.rawValue.hasPrefix("main") == true }) {
+        window.makeKeyAndOrderFront(nil)
+    } else {
+        open()
+    }
+}
+#endif

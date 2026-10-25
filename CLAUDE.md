@@ -32,5 +32,5 @@ Owner drives Xcode; Claude writes code and reviews. Read `docs/spec.md` first.
 - Before the first TestFlight build: deploy the CloudKit schema (Person, ChecklistItem + new Entry fields) to production in the CloudKit Console.
 - Builds Debug + Release on macOS + iOS. DayfoldCore tests: run from `DayfoldCore/` with `xcodebuild test -scheme DayfoldCore -destination platform=macOS`.
 - Capture everywhere done: one Core path (`Capture.add` / `addLines`), ⌘N, list paste/drop, Siri/Shortcuts, Mac hotkey panel, Services "Add to Dayfold". Spec: docs/superpowers/specs/2026-10-25-capture-everywhere-design.md
-- Owner checks pending: hotkey panel focus (toggle twice, click-away), Siri/Shortcuts run, Services menu appears (run `/System/Library/CoreServices/pbs -update` if not), ⌘N from Search/People.
+- Owner checks pending: hotkey panel focus (toggle twice, click-away), Siri/Shortcuts run, Services menu appears (run `/System/Library/CoreServices/pbs -update` if not), ⌘N from Search/People and with the window minimized, pasting a Windows (CRLF) list; hotkey default is ⌃⌥D.
 - Not yet: share extension and widgets (need targets + App Group); notification permission is requested at first launch (consider asking contextually).

@@ -64,7 +64,15 @@ public enum Capture {
     public static func stripListMarker(_ line: Substring) -> Substring {
         var rest = line
         for m in ["[ ]", "[x]", "[X]", "-", "*", "•", "–"] where rest.hasPrefix(m) {
-            rest = rest.dropFirst(m.count); return strip(rest, original: line)
+            rest = rest.dropFirst(m.count)
+            let stripped = strip(rest, original: line)
+            // A bullet may be followed by a Markdown checkbox ("- [ ] Call Sam").
+            if m.count == 1, stripped.count < line.count {
+                for box in ["[ ]", "[x]", "[X]"] where stripped.hasPrefix(box) {
+                    return strip(stripped.dropFirst(3), original: stripped)
+                }
+            }
+            return stripped
         }
         let digits = rest.prefix(while: { $0.isASCII && $0.isNumber })
         if !digits.isEmpty, let c = rest.dropFirst(digits.count).first, c == "." || c == ")" {

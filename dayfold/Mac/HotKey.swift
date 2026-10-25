@@ -7,7 +7,7 @@ enum QuickCaptureHotkey: String, CaseIterable {
     case off, ctrlOptSpace, ctrlOptD
 
     static let storageKey = "capture.hotkey"
-    static let `default` = Self.ctrlOptSpace
+    static let `default` = Self.ctrlOptD
 
     var title: String {
         switch self {

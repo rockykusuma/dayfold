@@ -22,10 +22,12 @@ final class MacAppDelegate: NSObject, NSApplicationDelegate {
             return
         }
         let context = AppStore.container.mainContext
-        Capture.addLines(text, kind: .task, scope: .lastUsed, day: Date(), in: context)
-        do { try context.save() } catch {
+        let entries = Capture.addLines(text, kind: .task, scope: .lastUsed, day: Date(), in: context)
+        do { try context.save() } catch let saveError {
+            entries.forEach(context.delete)   // not rollback(): that would drop the UI's unsaved edits
             Logger(subsystem: "com.rockykusuma.dayfold.app", category: "services")
-                .error("Services save failed: \(error.localizedDescription)")
+                .error("Services save failed: \(saveError.localizedDescription)")
+            error.pointee = saveError.localizedDescription as NSString
         }
     }
 }

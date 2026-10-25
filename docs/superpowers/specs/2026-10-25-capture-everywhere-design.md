@@ -101,7 +101,7 @@ Rules (unchanged from today's CaptureBar, now tested):
 
 ### Mac global hotkey → floating capture panel
 - Carbon `RegisterEventHotKey` (works sandboxed, no Accessibility permission).
-- Settings ▸ "Quick capture" picker: Off · ⌃⌥Space (default) · ⌃⌥D. If registration fails
+- Settings ▸ "Quick capture" picker: Off · ⌃⌥Space · ⌃⌥D (default). If registration fails
   (taken by another app) Settings shows "In use by another app — pick another".
 - Pressing it toggles a floating, centered `NSPanel` (Spotlight-like) hosting the existing
   `MenuBarCapture` view: becomes key so you can type immediately, Esc or clicking elsewhere closes

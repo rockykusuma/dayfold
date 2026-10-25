@@ -148,7 +148,7 @@ struct CaptureBar: View {
         guard !trimmed.isEmpty else { return }
         withAnimation(.snappy) {
             let link = linkedTo.map { Capture.Link(person: $0.person, link: $0.link) }
-            if trimmed.contains("\n") {
+            if trimmed.contains(where: \.isNewline) {
                 Capture.addLines(trimmed, kind: kind, scope: scope, day: day, linkedTo: link, in: context)
             } else {
                 Capture.add(trimmed, kind: kind, scope: scope, day: day, linkedTo: link, in: context)
