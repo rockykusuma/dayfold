@@ -25,6 +25,14 @@ struct DayPageView: View {
     private let calendar = Calendar.current
     private var today: Date { calendar.startOfDay(for: Date()) }
     private var isToday: Bool { calendar.isDate(day, inSameDayAs: today) }
+    private func consumeCaptureRequest() {
+        guard CaptureRouter.shared.pending else { return }
+        CaptureRouter.shared.consume()
+        day = today
+        // After RootView's tab/sidebar switch has landed.
+        Task { @MainActor in captureFocused = true }
+    }
+
     private var isPast: Bool { day < today }
 
     private var items: [Entry] {
@@ -73,11 +81,8 @@ struct DayPageView: View {
                 }
                 return added
             }
-            .onChange(of: CaptureRouter.shared.requests) {
-                day = today
-                // After RootView's tab/sidebar switch has landed.
-                Task { @MainActor in captureFocused = true }
-            }
+            .onAppear(perform: consumeCaptureRequest)
+            .onChange(of: CaptureRouter.shared.requests, consumeCaptureRequest)
             #if os(macOS)
             .navigationTitle("Dayfold")
             #else

@@ -94,4 +94,11 @@ struct CaptureTests {
         #expect(e.link == .from && e.tags == ["ops"])
         #expect(e.dueOn == CaptureParser.parse(text, now: now, calendar: ist).dueOn)
     }
+
+    @Test func linesKeepLink() {
+        let p = Person(name: "Asha"); context.insert(p)
+        let es = Capture.addLines("a\nb", scope: .work, day: now, linkedTo: .init(person: p, link: .from),
+                                  now: now, calendar: ist, in: context)
+        #expect(es.count == 2 && es.allSatisfy { $0.person?.id == p.id && $0.link == .from })
+    }
 }

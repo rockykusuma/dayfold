@@ -52,11 +52,11 @@ public enum Capture {
     /// One entry per non-blank line, list markers stripped. Does not save.
     @discardableResult
     public static func addLines(_ text: String, kind: EntryKind = .task, scope: EntryScope, day: Date,
-                                now: Date = Date(), calendar: Calendar = .current,
+                                linkedTo: Link? = nil, now: Date = Date(), calendar: Calendar = .current,
                                 in context: ModelContext) -> [Entry] {
         text.split(whereSeparator: \.isNewline).compactMap {
             add(String(stripListMarker($0.trimmingCharacters(in: .whitespaces)[...])), kind: kind, scope: scope,
-                day: day, now: now, calendar: calendar, in: context)
+                day: day, linkedTo: linkedTo, now: now, calendar: calendar, in: context)
         }
     }
 

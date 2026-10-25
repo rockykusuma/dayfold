@@ -3,14 +3,17 @@ import Observation
 import DayfoldCore
 
 /// Lets ⌘N (and anything else) ask for a fresh capture on Today.
-/// `RootView` switches to Today and `DayPageView` focuses the capture bar when `requests` changes.
+/// `RootView` switches to Today; `DayPageView` (possibly built after the request) consumes `pending`
+/// on appear and on change, then focuses the capture bar.
 @Observable
 final class CaptureRouter {
     static let shared = CaptureRouter()
 
     private(set) var requests = 0
+    private(set) var pending = false
 
-    func request() { requests += 1 }
+    func request() { requests += 1; pending = true }
+    func consume() { pending = false }
 }
 
 extension EntryScope {

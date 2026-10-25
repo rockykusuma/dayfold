@@ -147,11 +147,11 @@ struct CaptureBar: View {
     private func save() {
         guard !trimmed.isEmpty else { return }
         withAnimation(.snappy) {
+            let link = linkedTo.map { Capture.Link(person: $0.person, link: $0.link) }
             if trimmed.contains("\n") {
-                Capture.addLines(trimmed, kind: kind, scope: scope, day: day, in: context)
+                Capture.addLines(trimmed, kind: kind, scope: scope, day: day, linkedTo: link, in: context)
             } else {
-                Capture.add(trimmed, kind: kind, scope: scope, day: day,
-                            linkedTo: linkedTo.map { Capture.Link(person: $0.person, link: $0.link) }, in: context)
+                Capture.add(trimmed, kind: kind, scope: scope, day: day, linkedTo: link, in: context)
             }
         }
         text = ""
