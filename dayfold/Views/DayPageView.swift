@@ -93,7 +93,7 @@ struct DayPageView: View {
                     }
                 }
 
-                if items.isEmpty {
+                if items.isEmpty && !(showJournal && !dayJournal.isEmpty) {
                     emptyState
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)

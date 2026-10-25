@@ -19,13 +19,19 @@ struct JournalCard: View {
                         .accessibilityLabel("Bookmarked")
                 }
             }
-            if !entry.title.isEmpty {
+            let hasTitle = !entry.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            let hasText = !entry.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            if hasTitle {
                 Text(entry.title)
                     .font(.system(.headline, design: .serif, weight: .semibold))
             }
-            if !entry.text.isEmpty {
+            if hasText {
                 Text(entry.text)
                     .lineLimit(4)
+            }
+            if !hasTitle && !hasText {
+                Text(entry.displayPreview)
+                    .foregroundStyle(.secondary)
             }
             if entry.hasPhotos {
                 HStack(spacing: 6) {

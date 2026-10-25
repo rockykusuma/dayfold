@@ -67,14 +67,18 @@ public enum Journal {
         try reflections(on: day, calendar: calendar, in: context).first
     }
 
-    /// Trims; empty deletes the day's reflection(s), otherwise updates or inserts (dated 21:00 that day).
-    /// Does not save.
+    /// Trims; empty clears the day's reflection text(s), deleting only those left blank (a title or photos
+    /// keep it), otherwise updates or inserts (dated 21:00 that day). Does not save.
     public static func setReflection(_ text: String, for day: Date, now: Date = Date(), calendar: Calendar = .current,
                                      in context: ModelContext) throws {
         let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
         let existing = try reflections(on: day, calendar: calendar, in: context)
         if text.isEmpty {
-            existing.forEach(context.delete)
+            for entry in existing {
+                entry.text = ""
+                entry.updatedAt = now
+                if entry.isBlank { context.delete(entry) }
+            }
         } else if let entry = existing.first {
             entry.text = text
             entry.updatedAt = now
@@ -108,6 +112,15 @@ public enum Journal {
         let byDay = Dictionary(grouping: survivors.filter(\.isReflection)) { calendar.startOfDay(for: $0.date) }
         for group in byDay.values where group.count > 1 {
             let ordered = group.sorted { ($0.updatedAt, $0.id.uuidString) < ($1.updatedAt, $1.id.uuidString) }
+            // The merged entry keeps one title (the first set, see `absorb`); any other title becomes the
+            // first line of its own text so it survives the join.
+            let titles = ordered.map { $0.title.trimmingCharacters(in: .whitespacesAndNewlines) }
+            let kept = titles.first { !$0.isEmpty } ?? ""
+            for (loser, title) in zip(ordered, titles).dropFirst() {
+                if !title.isEmpty, title != kept {
+                    loser.text = loser.text.isEmpty ? title : title + "\n" + loser.text
+                }
+            }
             var texts: [String] = []
             for t in ordered.map(\.text) where !t.isEmpty && !texts.contains(t) { texts.append(t) }
             ordered[0].text = texts.joined(separator: "\n")

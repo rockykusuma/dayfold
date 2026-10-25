@@ -8,6 +8,14 @@ struct JournalEditorTarget: Identifiable {
     var date = Date()
 }
 
+extension JournalEntry {
+    /// `preview`, or "Photo" / "Untitled entry" when there's no title or text.
+    var displayPreview: String {
+        let p = preview
+        return !p.isEmpty ? p : hasPhotos ? "Photo" : "Untitled entry"
+    }
+}
+
 /// Compact journal row for the Day page and Search. Whole row tappable, 44pt minimum.
 struct JournalRow: View {
     let entry: JournalEntry
@@ -23,7 +31,7 @@ struct JournalRow: View {
                         Text(entry.date, format: .dateTime.weekday(.abbreviated).day().month(.abbreviated))
                             .font(.caption).foregroundStyle(.secondary)
                     }
-                    Text(entry.preview).lineLimit(2).multilineTextAlignment(.leading)
+                    Text(entry.displayPreview).lineLimit(2).multilineTextAlignment(.leading)
                 }
                 Spacer(minLength: 8)
                 if entry.hasPhotos { Image(systemName: "photo").foregroundStyle(.secondary).accessibilityLabel("Has photos") }

@@ -64,6 +64,28 @@ struct JournalTests {
         #expect(try entries().isEmpty)
     }
 
+    @Test func setReflectionEmptyKeepsTitled() throws {
+        context.insert(JournalEntry(date: at(2026,10,19,21), title: "T", text: "x", isReflection: true))
+        try Journal.setReflection("", for: at(2026,10,19,9), now: at(2026,10,19,22), calendar: ist, in: context)
+        let all = try entries()
+        #expect(all.count == 1)
+        #expect(all[0].title == "T")
+        #expect(all[0].text == "")
+        #expect(all[0].updatedAt == at(2026,10,19,22))
+    }
+
+    @Test func setReflectionEmptyKeepsPhotos() throws {
+        let e = JournalEntry(date: at(2026,10,19,21), text: "x", isReflection: true)
+        context.insert(e)
+        photo(0, to: e)
+        try Journal.setReflection(" ", for: at(2026,10,19,9), calendar: ist, in: context)
+        try context.save()
+        let all = try entries()
+        #expect(all.count == 1)
+        #expect(all[0].text == "")
+        #expect(all[0].sortedPhotos.count == 1)
+    }
+
     @Test func reflectionByCalendarDay() throws {
         try Journal.setReflection("x", for: at(2026,10,19,9), calendar: ist, in: context)
         context.insert(JournalEntry(date: at(2026,10,20,10), text: "plain"))
@@ -161,6 +183,34 @@ struct JournalTests {
         #expect(all.count == 1)
         #expect(all[0].isBookmarked)
         #expect(all[0].title == "T")
+    }
+
+    @Test func dedupeReflectionsKeepBothTitles() throws {
+        context.insert(JournalEntry(date: at(2026,10,19,21), title: "A", text: "a", isReflection: true,
+                                    createdAt: at(2026,10,19,20), updatedAt: at(2026,10,19,20)))
+        context.insert(JournalEntry(date: at(2026,10,19,21), title: "B", text: "b", isReflection: true,
+                                    createdAt: at(2026,10,19,22), updatedAt: at(2026,10,19,22)))
+        try Journal.dedupe(calendar: ist, in: context)
+        let all = try entries()
+        #expect(all.count == 1)
+        #expect(all[0].title == "A")
+        #expect(all[0].text.contains("B\nb"))
+        #expect(all[0].text.contains("a"))
+    }
+
+    @Test func dedupeReflectionsKeepPhotos() throws {
+        let keeper = JournalEntry(date: at(2026,10,19,21), text: "a", isReflection: true,
+                                  createdAt: at(2026,10,19,20), updatedAt: at(2026,10,19,20))
+        let loser = JournalEntry(date: at(2026,10,19,21), text: "b", isReflection: true,
+                                 createdAt: at(2026,10,19,22), updatedAt: at(2026,10,19,22))
+        context.insert(keeper); context.insert(loser)
+        photo(0, to: keeper); photo(0, to: loser)
+        try Journal.dedupe(calendar: ist, in: context)
+        try context.save()
+        let all = try entries()
+        #expect(all.count == 1)
+        #expect(all[0].sortedPhotos.map(\.order) == [0, 1])
+        #expect(try context.fetch(FetchDescriptor<JournalPhoto>()).count == 2)
     }
 
     @Test func migrateSkipsBlank() throws {

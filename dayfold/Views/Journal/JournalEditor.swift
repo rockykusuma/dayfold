@@ -238,6 +238,8 @@ struct JournalEditor: View {
     }
 
     private func apply(to entry: JournalEntry, now: Date) {
+        // A reflection moved to another day becomes an ordinary entry, so it never merges into that day's reflection.
+        if entry.isReflection && !Calendar.current.isDate(date, inSameDayAs: entry.date) { entry.isReflection = false }
         entry.date = date
         entry.title = title
         entry.text = text

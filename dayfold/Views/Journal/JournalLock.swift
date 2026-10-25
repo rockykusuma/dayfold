@@ -23,13 +23,14 @@ import LocalAuthentication
     #endif
 
     /// The Settings toggle. Stored in UserDefaults; registered with Observation so locked views update when it flips.
+    /// Reads false without a device passcode (nothing could ever unlock it), so nothing is hidden.
     var isEnabled: Bool {
         get {
             access(keyPath: \.isEnabled)
             #if DEBUG
             if CommandLine.arguments.contains("-locked") { return true }   // screenshots of the locked state
             #endif
-            return UserDefaults.standard.bool(forKey: Self.storageKey)
+            return Self.canAuthenticate && UserDefaults.standard.bool(forKey: Self.storageKey)
         }
         set { withMutation(keyPath: \.isEnabled) { UserDefaults.standard.set(newValue, forKey: Self.storageKey) } }
     }
@@ -42,7 +43,12 @@ import LocalAuthentication
     /// An auth prompt is up; the Unlock button and the toggle wait.
     private(set) var isAuthenticating = false
 
+    /// A device passcode is set, so `.deviceOwnerAuthentication` can succeed.
+    // ponytail: asked on every read (passcode can change while the app runs); cache it if it ever shows up in profiles.
+    static var canAuthenticate: Bool { LAContext().canEvaluatePolicy(.deviceOwnerAuthentication, error: nil) }
+
     func unlock() async -> Bool {
+        guard Self.canAuthenticate else { isUnlocked = true; return true }   // no passcode: nothing to check against
         guard !isAuthenticating else { return false }
         isAuthenticating = true
         defer { isAuthenticating = false }

@@ -234,16 +234,9 @@ struct WeekView: View {
         if !review.entries.isEmpty || missingToday {
             Section {
                 ForEach(review.entries) { entry in
-                    Button { openedJournal = entry } label: {
-                        (Text(entry.date, format: .dateTime.weekday(.abbreviated).day()).foregroundStyle(.secondary)
-                            + Text(" · ").foregroundStyle(.secondary)
-                            + Text(entry.preview).font(.system(.body, design: .serif)))
-                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .listRowInsets(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
-                    .listRowBackground(Color.clear)
+                    JournalRow(entry: entry, showDate: true) { openedJournal = entry }
+                        .listRowInsets(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
+                        .listRowBackground(Color.clear)
                 }
                 if missingToday {
                     Button { writingToday = true } label: {

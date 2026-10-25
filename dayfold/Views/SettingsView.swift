@@ -56,9 +56,15 @@ struct SettingsView: View {
             }
             #endif
 
-            Section("Journal") {
+            Section {
                 Toggle(JournalLock.toggleTitle, isOn: lockToggle)
-                    .disabled(JournalLock.shared.isAuthenticating)
+                    .disabled(JournalLock.shared.isAuthenticating || !JournalLock.canAuthenticate)
+            } header: {
+                Text("Journal")
+            } footer: {
+                if !JournalLock.canAuthenticate {
+                    Text("Set a device passcode to lock your journal.")
+                }
             }
 
             Section("Notifications") {

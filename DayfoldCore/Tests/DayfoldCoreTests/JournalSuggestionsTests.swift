@@ -19,7 +19,7 @@ struct JournalSuggestionsTests {
         Review.apply(.done, to: e, now: when, calendar: ist)
     }
     func person(_ n: String) -> Person { let p = Person(name: n); context.insert(p); return p }
-    func make(_ tasks: [Entry]) -> [JournalSuggestion] { JournalSuggestions.make(tasks: tasks, day: day, calendar: ist) }
+    func make(_ tasks: [Entry]) -> [JournalSuggestion] { JournalSuggestions.make(tasks: tasks, day: day, now: day, calendar: ist) }
 
     @Test func finishedPlural() {
         let a = task("Early"), b = task("Send deck")
@@ -56,6 +56,19 @@ struct JournalSuggestionsTests {
         let s = make([a])[0]
         #expect(s.title == "Priya asked you today")
         #expect(s.detail == "“Review PR”")
+    }
+
+    @Test func askedOnPastDay() {
+        let a = task("Review PR"); a.person = person("Priya"); a.link = .from
+        let s = JournalSuggestions.make(tasks: [a], day: day, now: at(2026, 10, 25, 9), calendar: ist)[0]
+        #expect(s.title == "Priya asked you")
+        #expect(s.detail == "“Review PR”")
+    }
+
+    @Test func openNotYetShownSkipped() {
+        let a = task("Later", created: at(2026, 10, 18, 9))
+        a.showOn = at(2026, 10, 24)
+        #expect(make([a]).allSatisfy { $0.kind == .prompt })
     }
 
     @Test func capAtThree() {
