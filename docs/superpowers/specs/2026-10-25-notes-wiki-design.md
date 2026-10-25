@@ -123,7 +123,7 @@ children), `sortedChildren` (by `displayTitle`, localized).
   `completionToken` is non-nil (tap completes `[[Title]]`). Edits write straight to the model (autosave,
   `updatedAt = now` on change). On leaving edit mode (Done, back, tab switch): if the title changed,
   `PageLinks.rename` from the title at edit start; if the page `isBlank`, delete it.
-- Empty body in view mode: secondary "Tap Edit to write."
+- Empty body in view mode: secondary "Tap to write." — tapping it starts editing (as Edit).
 
 ### Search tab
 A "Notes" section (after Journal, before tasks) when `Search.pages` matches; rows = title + breadcrumb

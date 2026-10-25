@@ -122,9 +122,15 @@ struct PageView: View {
                     .accessibilityAddTraits(.isHeader)
             }
             if blocks.isEmpty {
-                Text("Tap Edit to write.")
-                    .font(.system(.body, design: .serif))
-                    .foregroundStyle(.secondary)
+                // A button, not a hint: people tap the empty page itself to start writing.
+                Button(action: beginEditing) {
+                    Text("Tap to write.")
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .font(.system(.body, design: .serif))
+                .foregroundStyle(.secondary)
             } else {
                 PageBlocksView(blocks: blocks, onToggle: toggle)
                     .environment(\.openURL, OpenURLAction { url in open(url) })
