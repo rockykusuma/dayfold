@@ -7,7 +7,7 @@ enum AppStore {
         #if DEBUG
         if DemoData.isEnabled { return DemoData.container() }
         #endif
-        let schema = Schema([Entry.self, Person.self, ChecklistItem.self])
+        let schema = Schema([Entry.self, Person.self, ChecklistItem.self, DayNote.self])
         let config = ModelConfiguration(
             schema: schema,
             cloudKitDatabase: .private("iCloud.com.rockykusuma.dayfold")

@@ -7,6 +7,7 @@ public enum Maintenance {
         try PeopleDirectory.backfillFromText(in: context)
         try PeopleDirectory.mergeDuplicates(in: context)
         try Recurrence.dedupe(in: context)
+        try DayNotes.dedupe(in: context)
         try context.save()
     }
 }
