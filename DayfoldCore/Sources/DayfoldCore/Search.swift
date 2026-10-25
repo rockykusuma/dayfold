@@ -41,6 +41,20 @@ public enum Search {
             .map(\.element)
     }
 
+    /// Journal entries whose title or text contain every plain word (AND, case/diacritic-insensitive), newest first.
+    /// `#`, `@` and `is:` tokens are about tasks, so they find nothing here.
+    public static func journal(_ entries: [JournalEntry], query: String) -> [JournalEntry] {
+        let tokens = parse(query)
+        let keys = tokens.compactMap { if case .text(let k) = $0 { k } else { nil } }
+        guard !keys.isEmpty, keys.count == tokens.count else { return [] }
+        return entries
+            .filter { e in
+                let h = PeopleDirectory.normalize(e.title + " " + e.text)
+                return keys.allSatisfy(h.contains)
+            }
+            .sorted { $0.date > $1.date }
+    }
+
     /// By capture day, newest day first; order within a day is kept.
     public static func dayGroups(_ results: [Entry], calendar: Calendar = .current) -> [SearchDayGroup] {
         Dictionary(grouping: results) { calendar.startOfDay(for: $0.createdAt) }

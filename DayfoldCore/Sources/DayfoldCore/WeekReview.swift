@@ -13,7 +13,7 @@ public struct PersonGroup: Identifiable {
     }
 }
 
-/// One week of closed, stuck and waiting tasks plus day notes. Pure rules; the Week screen only displays it.
+/// One week of closed, stuck and waiting tasks plus journal entries. Pure rules; the Week screen only displays it.
 public struct WeekReview {
     public let interval: DateInterval
     public let isCurrent: Bool
@@ -23,12 +23,12 @@ public struct WeekReview {
     public let stuck: [Entry]
     /// Current week only.
     public let waiting: [PersonGroup]
-    public let notes: [DayNote]
+    public let entries: [JournalEntry]
     private let today: Date
 
-    public var isEmpty: Bool { done.isEmpty && stuck.isEmpty && waiting.isEmpty && notes.isEmpty && droppedCount == 0 }
+    public var isEmpty: Bool { done.isEmpty && stuck.isEmpty && waiting.isEmpty && entries.isEmpty && droppedCount == 0 }
 
-    public init(entries: [Entry], notes: [DayNote], containing date: Date, today: Date, calendar: Calendar = .current) {
+    public init(entries: [Entry], journal: [JournalEntry], containing date: Date, today: Date, calendar: Calendar = .current) {
         let interval = calendar.dateInterval(of: .weekOfYear, for: date) ?? DateInterval(start: calendar.startOfDay(for: date), duration: 7 * 86_400)
         let inWeek = { (d: Date?) in d.map { interval.start <= $0 && $0 < interval.end } ?? false }
         let tasks = entries.filter { $0.kind == .task }
@@ -65,11 +65,11 @@ public struct WeekReview {
             .filter { !$0.isWaiting && $0.showOn <= today && DayPage.age(of: $0, on: today, calendar: calendar) >= 3 }
             .sorted { $0.createdAt < $1.createdAt }
         self.waiting = isCurrent ? waitingByPerson.map { PersonGroup(person: $0[0].person, entries: $0) } : []
-        self.notes = notes.filter { inWeek($0.day) }.sorted { $0.day < $1.day }
+        self.entries = journal.filter { inWeek($0.date) }.sorted { $0.date < $1.date }
     }
 
     /// Plain-text update for sharing. Work entries only (an update is for colleagues; the page shows everything).
-    /// Never includes day notes. Empty sections are omitted.
+    /// Never includes journal entries. Empty sections are omitted.
     public func summaryText(title: String, calendar: Calendar = .current) -> String {
         var lines = [title]
         let doneEntries = done.flatMap(\.entries).filter { $0.scope == .work }

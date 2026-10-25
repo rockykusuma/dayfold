@@ -100,3 +100,25 @@ struct SearchTests {
         #expect(elapsed < .seconds(5))   // lenient: Debug builds are slow
     }
 }
+
+extension SearchTests {
+    @Test func journalMatchesWords() {
+        let e = JournalEntry(date: at(2026,10,20), title: "Offsite", text: "Booked the venue in Goa")
+        #expect(Search.journal([e], query: "venue goa").count == 1)
+        #expect(Search.journal([e], query: "venue paris").isEmpty)
+        #expect(Search.journal([e], query: "Gõa").count == 1)
+    }
+
+    @Test func journalIgnoresTaskTokens() {
+        let e = JournalEntry(date: at(2026,10,20), title: "Offsite", text: "venue #hiring")
+        #expect(Search.journal([e], query: "#hiring").isEmpty)
+        #expect(Search.journal([e], query: "@meera venue").isEmpty)
+        #expect(Search.journal([e], query: "is:open").isEmpty)
+        #expect(Search.journal([e], query: "").isEmpty)
+    }
+
+    @Test func journalOrder() {
+        let old = JournalEntry(date: at(2026,10,1), text: "trip"), new = JournalEntry(date: at(2026,10,9), text: "trip")
+        #expect(Search.journal([old, new], query: "trip").map(\.date) == [at(2026,10,9), at(2026,10,1)])
+    }
+}

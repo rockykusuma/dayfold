@@ -33,8 +33,8 @@ struct WeekReviewTests {
         return e
     }
 
-    func week(_ entries: [Entry], notes: [DayNote] = [], containing d: Date? = nil, calendar: Calendar = ist) -> WeekReview {
-        WeekReview(entries: entries, notes: notes, containing: d ?? today, today: today, calendar: calendar)
+    func week(_ entries: [Entry], journal: [JournalEntry] = [], containing d: Date? = nil, calendar: Calendar = ist) -> WeekReview {
+        WeekReview(entries: entries, journal: journal, containing: d ?? today, today: today, calendar: calendar)
     }
 
     @Test func intervalFollowsFirstWeekday() {
@@ -114,11 +114,10 @@ struct WeekReviewTests {
         #expect(week([stuck, w]).isCurrent)
     }
 
-    @Test func notesInWeek() {
-        let notes = [DayNote(day: at(2026, 10, 21), text: "b", calendar: ist),
-                     DayNote(day: at(2026, 10, 26), text: "c", calendar: ist),
-                     DayNote(day: at(2026, 10, 19), text: "a", calendar: ist)]
-        #expect(week([], notes: notes).notes.map(\.day) == [at(2026, 10, 19), at(2026, 10, 21)])
+    @Test func entriesInWeek() {
+        let journal = [JournalEntry(date: at(2026, 10, 21), text: "b"), JournalEntry(date: at(2026, 10, 26), text: "c"),
+                       JournalEntry(date: at(2026, 10, 19), text: "a")]
+        #expect(week([], journal: journal).entries.map(\.date) == [at(2026, 10, 19), at(2026, 10, 21)])
     }
 
     @Test func summaryTextExample() {
@@ -130,8 +129,8 @@ struct WeekReviewTests {
         let report = done("Weekly report", at(2026, 10, 22, 10))
         let bug = open("Fix login bug", created: at(2026, 10, 17, 9))
         let contract = waiting("Contract draft", on: ravi, since: at(2026, 10, 19, 9))
-        let note = DayNote(day: at(2026, 10, 20), text: "private thoughts", calendar: ist)
-        let text = week([send, budget, report, bug, contract], notes: [note]).summaryText(title: "Week of 19 Oct", calendar: ist)
+        let note = JournalEntry(date: at(2026, 10, 20), text: "private thoughts")
+        let text = week([send, budget, report, bug, contract], journal: [note]).summaryText(title: "Week of 19 Oct", calendar: ist)
         #expect(text == "Week of 19 Oct\nDone (3)\n• Send deck — Meera\n• Budget numbers — Ravi\n• Weekly report\nStill open (1)\n• Fix login bug (6d)\nWaiting on (1)\n• Ravi: Contract draft (4d)")
         #expect(!text.contains("private thoughts"))
     }

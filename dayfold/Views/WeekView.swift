@@ -8,7 +8,7 @@ struct WeekView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query(sort: \Entry.createdAt) private var entries: [Entry]
-    @Query private var notes: [DayNote]
+    @Query private var journal: [JournalEntry]
     /// Weeks back from now (0 = this week).
     @State private var weekOffset = 0
     @State private var editing: Entry?
@@ -22,7 +22,7 @@ struct WeekView: View {
     private var motion: Animation? { reduceMotion ? nil : .snappy }
 
     var body: some View {
-        let review = WeekReview(entries: entries, notes: notes, containing: anchor, today: Date())
+        let review = WeekReview(entries: entries, journal: journal, containing: anchor, today: Date())
         let title = "Week of \(review.interval.start.formatted(.dateTime.day().month(.abbreviated)))"
         List {
             header(review, title: title)
@@ -227,20 +227,17 @@ struct WeekView: View {
     }
 
     @ViewBuilder private func notesSection(_ review: WeekReview) -> some View {
-        let missingToday = review.isCurrent && !review.notes.contains { calendar.isDate($0.day, inSameDayAs: today) }
-        if !review.notes.isEmpty || missingToday {
+        let missingToday = review.isCurrent && !review.entries.contains { calendar.isDate($0.date, inSameDayAs: today) }
+        if !review.entries.isEmpty || missingToday {
             Section {
-                ForEach(review.notes) { note in
-                    Button { noteDay = NoteDay(day: note.day) } label: {
-                        (Text(note.day, format: .dateTime.weekday(.abbreviated).day()).foregroundStyle(.secondary)
-                            + Text(" · ").foregroundStyle(.secondary)
-                            + Text(note.text).font(.system(.body, design: .serif)))
-                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .listRowInsets(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
-                    .listRowBackground(Color.clear)
+                // Tapping a journal row does nothing for now; a later task opens the entry editor.
+                ForEach(review.entries) { entry in
+                    (Text(entry.date, format: .dateTime.weekday(.abbreviated).day()).foregroundStyle(.secondary)
+                        + Text(" · ").foregroundStyle(.secondary)
+                        + Text(entry.preview).font(.system(.body, design: .serif)))
+                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                        .listRowInsets(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
+                        .listRowBackground(Color.clear)
                 }
                 if missingToday {
                     Button { noteDay = NoteDay(day: today) } label: {
