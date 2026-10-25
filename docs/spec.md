@@ -152,3 +152,4 @@ long-form journal view. (v0.2–v0.3; see README roadmap.)
 - 2026-10-25 The lock toggle shows the tapped value while the auth prompt is up and settles on the result (reverts on
   failure or cancel), instead of flicking back and forth.
 - Before the first TestFlight build: deploy the CloudKit schema (JournalEntry, JournalPhoto) to production in the CloudKit Console.
+- 2026-10-25: Journal lives only in its own tab — the Day page shows no journal section (owner request). Search, the Week page and Review's reflection field still use journal entries.

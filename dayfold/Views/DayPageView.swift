@@ -7,11 +7,9 @@ import DayfoldCore
 struct DayPageView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \Entry.createdAt) private var allEntries: [Entry]
-    @Query(sort: \JournalEntry.date) private var journal: [JournalEntry]
     @AppStorage("dayPage.scope") private var filter: ScopeFilter = .all
     @State private var day = Calendar.current.startOfDay(for: Date())
     @State private var editing: Entry?
-    @State private var journalEditing: JournalEditorTarget?
     @State private var delegating: Entry?
     @State private var openedPerson: Person?
     @State private var showCalendar = false
@@ -36,8 +34,6 @@ struct DayPageView: View {
     }
 
     private var isPast: Bool { day < today }
-    private var isFuture: Bool { day > today }
-    private var noon: Date { calendar.date(bySettingHour: 12, minute: 0, second: 0, of: day) ?? day }
 
     private var items: [Entry] {
         DayPage.items(allEntries, on: day).filter { filter.includes($0.scope) }
@@ -48,9 +44,6 @@ struct DayPageView: View {
     var body: some View {
         NavigationStack {
             List {
-                let dayJournal = journal.filter { calendar.isDate($0.date, inSameDayAs: day) }
-                // Hidden while the journal is locked; its editor sheet hangs off the List, so hiding never dismisses it.
-                let showJournal = !JournalLock.shared.isHidden && (!isFuture || !dayJournal.isEmpty)
                 header
                     .listRowInsets(EdgeInsets())
                     .listRowSeparator(.hidden)
@@ -69,31 +62,7 @@ struct DayPageView: View {
                 }
                 ForEach(split.timeline) { row($0) }
 
-                if showJournal {
-                    Section {
-                        ForEach(dayJournal) { e in
-                            JournalRow(entry: e) { journalEditing = JournalEditorTarget(entry: e) }
-                                .listRowBackground(Color.clear)
-                        }
-                        if !isFuture {
-                            Button { journalEditing = JournalEditorTarget(date: isToday ? Date() : noon) } label: {
-                                Label("Write about this day", systemImage: "square.and.pencil")
-                                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                                    .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                            .foregroundStyle(.tint)
-                            .listRowBackground(Color.clear)
-                        }
-                    } header: {
-                        Text("Journal")
-                            .font(.caption.weight(.semibold))
-                            .textCase(.uppercase)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                if items.isEmpty && !(showJournal && !dayJournal.isEmpty) {
+                if items.isEmpty {
                     emptyState
                         .listRowSeparator(.hidden)
                         .listRowBackground(Color.clear)
@@ -122,7 +91,6 @@ struct DayPageView: View {
             }
             .toolbar { toolbar }
             .sheet(item: $editing) { EntryEditor(entry: $0) }
-            .sheet(item: $journalEditing) { JournalEditor(entry: $0.entry, date: $0.date) }
             #if DEBUG
             // `-edit <text prefix>` opens the editor for the first matching entry (screenshots can't tap).
             // With `-journal` it's JournalView's to handle instead.

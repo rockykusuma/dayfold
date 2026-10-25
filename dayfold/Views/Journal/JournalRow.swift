@@ -1,13 +1,6 @@
 import SwiftUI
 import DayfoldCore
 
-/// Which journal entry the editor sheet shows: an existing one, or a new one dated `date`.
-struct JournalEditorTarget: Identifiable {
-    let id = UUID()
-    var entry: JournalEntry?
-    var date = Date()
-}
-
 extension JournalEntry {
     /// `preview`, or "Photo" / "Untitled entry" when there's no title or text.
     var displayPreview: String {

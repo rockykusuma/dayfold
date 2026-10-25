@@ -146,7 +146,7 @@ next pick. Cancel with changes asks "Discard changes?". Photos are downscaled on
 (ImageIO thumbnail, JPEG 0.8) and stored as `JournalPhoto.data`.
 
 ### Elsewhere
-- **Day page:** a "Journal" section after the timeline listing that day's entries as compact rows
+- **Day page:** *(removed 2026-10-25 — the owner wants the journal only in its own tab; the Day page shows no journal content.)* Originally: a "Journal" section after the timeline listing that day's entries as compact rows
   (preview text, bookmark glyph, photo glyph), tap → editor; today and past days show "Write about this
   day" (opens a new entry dated that day at the current time, or noon for past days).
 - **Search:** a "Journal" section above the task results when `Search.journal` matches; tap → editor.
