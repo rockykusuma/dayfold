@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 import DayfoldCore
 import UserNotifications
+import WidgetKit
 
 @main
 struct DayfoldApp: App {
@@ -20,6 +21,10 @@ struct DayfoldApp: App {
         }
         #endif
         container = AppStore.container
+        // Every save (app, Siri, Mac panel, Services) refreshes the widget; WidgetKit coalesces bursts.
+        NotificationCenter.default.addObserver(forName: ModelContext.didSave, object: nil, queue: .main) { _ in
+            WidgetCenter.shared.reloadAllTimelines()
+        }
     }
 
     var body: some Scene {

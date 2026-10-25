@@ -13,7 +13,7 @@ enum DemoData {
 
     @MainActor
     static func container() -> ModelContainer {
-        let container = try! ModelContainer(for: Entry.self, Person.self, ChecklistItem.self, DayNote.self, JournalEntry.self, JournalPhoto.self, NotePage.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+        let container = try! ModelContainer(for: Schema(SharedStore.models), configurations: ModelConfiguration(isStoredInMemoryOnly: true))
         let cal = Calendar.current
         let today = cal.startOfDay(for: Date())
         func at(_ daysAgo: Int, _ hour: Int, _ minute: Int) -> Date {

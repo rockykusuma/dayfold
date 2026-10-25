@@ -99,6 +99,7 @@ long-form journal view. (v0.2–v0.3; see README roadmap.)
   Review after N days (default 3). iPhone tabs, Mac sidebar. Spec:
   docs/superpowers/specs/2026-10-18-people-delegation-design.md
 - 2026-10-26 Notification permission is asked in context, not at first launch: after the first Review ("Remind Me at <time>" on the All folded screen, shown only while permission is undecided and some reminder days are set) or in Settings (Turn On, or changing the review time / days). Launch only reschedules when already allowed.
+- 2026-10-26 Widgets: one "Today" widget (small, medium, large; iPhone Lock Screen circular + rectangular), read-only: open tasks priority first, "x of y done", the same `DayPage` rule as the app, with a ready entry at midnight so carry-forward shows without opening the app. Not interactive (ticking from the widget would write outside the app's CloudKit sync; revisit with App Intents if wanted). The store moved into the App Group for this; the old store is copied once and then removed.
 - Before the first TestFlight build: deploy the CloudKit schema (Person + new Entry fields)
   to production in the CloudKit Console.
 - 2026-10-19 Find & organise: search (AND tokens, #tag, @person, is: filters), visible tags,

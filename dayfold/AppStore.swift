@@ -10,13 +10,11 @@ enum AppStore {
         #if DEBUG
         if DemoData.isEnabled { return DemoData.container() }
         #endif
-        let types: [any PersistentModel.Type] = [Entry.self, Person.self, ChecklistItem.self, DayNote.self,
-                                                 JournalEntry.self, JournalPhoto.self, NotePage.self]
+        let types = SharedStore.models
         let schema = Schema(types)
-        let config = ModelConfiguration(
-            schema: schema,
-            cloudKitDatabase: .private(cloudKitID)
-        )
+        // In the App Group so the widget can read it; a store from before the group moves there once.
+        let url = SharedStore.groupURL.map { SharedStore.moveStore(from: SharedStore.legacyURL, to: $0) } ?? SharedStore.legacyURL
+        let config = ModelConfiguration(schema: schema, url: url, cloudKitDatabase: .private(cloudKitID))
         #if DEBUG
         if CommandLine.arguments.contains("-initCloudKitSchema") { initializeCloudKitSchema(types, at: config.url) }
         #endif
@@ -27,7 +25,7 @@ enum AppStore {
         }
     }()
 
-    static let cloudKitID = "iCloud.com.rockykusuma.dayfold"
+    static let cloudKitID = SharedStore.cloudKitID
 
     #if DEBUG
     /// `-initCloudKitSchema` (run once from Xcode, signed into iCloud): writes every record type and field to the CloudKit
