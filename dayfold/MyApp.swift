@@ -13,21 +13,10 @@ struct DayfoldApp: App {
         UNUserNotificationCenter.current().delegate = ReviewReminder.shared
         #if DEBUG
         if DemoData.isEnabled {
-            container = DemoData.container()
             ReviewReminder.shared.showReview = CommandLine.arguments.contains("-review")
-            return
         }
         #endif
-        let schema = Schema([Entry.self, Person.self, ChecklistItem.self])
-        let config = ModelConfiguration(
-            schema: schema,
-            cloudKitDatabase: .private("iCloud.com.rockykusuma.dayfold")
-        )
-        do {
-            container = try ModelContainer(for: schema, configurations: [config])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
+        container = AppStore.container
     }
 
     var body: some Scene {
