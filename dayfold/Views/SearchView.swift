@@ -8,7 +8,9 @@ struct SearchView: View {
     @Query(sort: \Person.name) private var people: [Person]
     @Bindable private var router = SearchRouter.shared
     @Environment(\.modelContext) private var context
+    @Query(sort: \JournalEntry.date, order: .reverse) private var journal: [JournalEntry]
     @State private var editing: Entry?
+    @State private var journalEditing: JournalEntry?
     @State private var openedPerson: Person?
 
     private let today = Calendar.current.startOfDay(for: Date())
@@ -20,10 +22,11 @@ struct SearchView: View {
     var body: some View {
         // ponytail: recomputed per keystroke (see SearchTests.largeStore). Debounce if stores grow large.
         let results = query.isEmpty ? [] : Search.results(entries, query: router.query)
+        let journalMatches = query.isEmpty ? [] : Search.journal(journal, query: router.query)
         List {
             if query.isEmpty {
                 browse
-            } else if results.isEmpty {
+            } else if results.isEmpty && journalMatches.isEmpty {
                 ContentUnavailableView {
                     Label { Text("Nothing matches").font(.system(.title2, design: .serif, weight: .semibold)) }
                           icon: { Image(systemName: "magnifyingglass") }
@@ -32,6 +35,16 @@ struct SearchView: View {
                 }
                     .listRowBackground(Color.clear)
             } else {
+                if !journalMatches.isEmpty {
+                    Section {
+                        ForEach(journalMatches) { e in
+                            JournalRow(entry: e, showDate: true) { journalEditing = e }
+                                .listRowBackground(Color.clear)
+                        }
+                    } header: {
+                        Text("Journal").font(.system(.headline, design: .serif))
+                    }
+                }
                 ForEach(Search.dayGroups(results)) { group in
                     Section {
                         ForEach(group.entries) { entry in
@@ -56,6 +69,7 @@ struct SearchView: View {
         .searchable(text: $router.query, prompt: "Search everything")
         .searchSuggestions { suggestions }
         .sheet(item: $editing) { EntryEditor(entry: $0) }
+        .sheet(item: $journalEditing) { JournalEditor(entry: $0) }
         .navigationDestination(item: $openedPerson) { PersonView(person: $0) }
         // A tag tapped on a pushed person page should show its results, not stay on the page.
         .onChange(of: router.shown) { openedPerson = nil }
