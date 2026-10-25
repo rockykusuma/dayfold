@@ -15,6 +15,9 @@ struct ReviewView: View {
     @State private var pickingDate = false
     @State private var delegating = false
     @State private var pushDate: Date
+    @State private var note = ""
+    @State private var savedNote = "" // what's stored; save only when `note` differs
+    @FocusState private var noteFocused: Bool
 
     private let calendar = Calendar.current
     private let today = Calendar.current.startOfDay(for: Date())
@@ -45,7 +48,14 @@ struct ReviewView: View {
         NavigationStack {
             Group {
                 if finished {
-                    summary.padding(20)
+                    GeometryReader { geo in
+                        ScrollView {
+                            summary.padding(20)
+                                .frame(maxWidth: .infinity, minHeight: geo.size.height)
+                        }
+                        .scrollBounceBehavior(.basedOnSize)
+                        .scrollDismissesKeyboard(.interactively)
+                    }
                 } else {
                     ScrollView {
                         VStack(spacing: 24) {
@@ -295,14 +305,40 @@ struct ReviewView: View {
                     .multilineTextAlignment(.center)
                     .padding(.top, 4)
             }
-            Button { dismiss() } label: { Text("Close").foregroundStyle(Color.paper) }
+            // Review always reviews today, so the field is always shown.
+            TextField("How did today go?", text: $note, axis: .vertical)
+                .lineLimit(1...3)
+                .font(.system(.body, design: .serif))
+                .focused($noteFocused)
+                .submitLabel(.done)
+                .onSubmit { saveNote(); noteFocused = false }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .frame(minHeight: 44)
+                .background(Color.card, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.separator, lineWidth: 0.5))
+                .padding(.top, 12)
+            Button { saveNote(); dismiss() } label: { Text("Close").foregroundStyle(Color.paper) }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
                 .padding(.top, 12)
                 .keyboardShortcut(.defaultAction)
         }
-        .frame(maxHeight: .infinity)
+        .readableWidth()
         .transition(.opacity)
+        .onAppear {
+            let existing = (try? DayNotes.note(for: today, in: context))?.text ?? ""
+            note = existing
+            savedNote = existing
+        }
+        .onDisappear(perform: saveNote)
+    }
+
+    /// Writes only when the text changed, so closing untouched never creates or rewrites a note.
+    private func saveNote() {
+        guard note != savedNote else { return }
+        try? DayNotes.set(note, for: today, in: context)
+        savedNote = note
     }
 
     private var datePickerSheet: some View {
