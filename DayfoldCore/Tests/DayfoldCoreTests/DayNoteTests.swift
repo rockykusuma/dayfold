@@ -61,6 +61,17 @@ struct DayNoteTests {
         #expect(merged.updatedAt == at(2026,10,19,22))
     }
 
+    @Test func dedupeSameCalendarDay() throws {
+        let a = DayNote(day: at(2026,10,19), text: "A", updatedAt: at(2026,10,19,20), calendar: ist)
+        let b = DayNote(day: at(2026,10,19), text: "B", updatedAt: at(2026,10,19,21), calendar: ist)
+        b.day = at(2026,10,19,5)  // as if written in another time zone
+        context.insert(a); context.insert(b)
+        try DayNotes.dedupe(calendar: ist, in: context)
+        let notes = try all()
+        #expect(notes.count == 1)
+        #expect(notes[0].text == "A\nB")
+    }
+
     @Test func tidyDedupes() throws {
         context.insert(DayNote(day: at(2026,10,19), text: "A", updatedAt: at(2026,10,19,20), calendar: ist))
         context.insert(DayNote(day: at(2026,10,19), text: "B", updatedAt: at(2026,10,19,21), calendar: ist))

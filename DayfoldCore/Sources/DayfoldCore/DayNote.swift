@@ -39,9 +39,9 @@ public enum DayNotes {
 
     /// Two devices can each create a note for the same day. Keep the oldest, join the distinct
     /// texts in `updatedAt` order, take the newest `updatedAt`. Does not save.
-    public static func dedupe(in context: ModelContext) throws {
+    public static func dedupe(calendar: Calendar = .current, in context: ModelContext) throws {
         let all = try context.fetch(FetchDescriptor<DayNote>())
-        for group in Dictionary(grouping: all, by: \.day).values where group.count > 1 {
+        for group in Dictionary(grouping: all, by: { calendar.startOfDay(for: $0.day) }).values where group.count > 1 {
             let ordered = group.sorted { ($0.updatedAt, $0.id.uuidString) < ($1.updatedAt, $1.id.uuidString) }
             var texts: [String] = []
             for t in ordered.map(\.text) where !t.isEmpty && !texts.contains(t) { texts.append(t) }
