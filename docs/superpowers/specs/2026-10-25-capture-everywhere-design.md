@@ -63,7 +63,7 @@ public enum Capture {
 
 Rules (unchanged from today's CaptureBar, now tested):
 - Kind: `linkedTo.link == .about` → note; parsed `to:` or `linkedTo.link == .to` → task; else `kind`.
-- Scope: parsed `work:`/`personal:` wins, else `scope`.
+- Scope: parsed `#work`/`#personal` wins, else `scope`.
 - `showOn`: nil when `day` is today (by `calendar`), else `day`. `createdAt = now`.
 - Linking: `linkedTo` (`.to` → `Review.delegate`) ▸ parsed `to:` (delegate; `from` text stays) ▸
   parsed `from:` (link `.from`), people via `PeopleDirectory.findOrCreate`.
