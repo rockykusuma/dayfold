@@ -173,7 +173,7 @@ next pick. Cancel with changes asks "Discard changes?". Photos are downscaled on
 
 ## Testing (Swift Testing, `ist` calendar)
 - Models: cascade delete of photos; `isBlank`, `preview`, `sortedPhotos`.
-- `Journal`: setReflection insert/update/trim/empty-deletes/empty-no-op; reflection(for:) by calendar
+- `Journal`: setReflection insert/update/trim/empty clears text and deletes only blank entries/empty-no-op; reflection(for:) by calendar
   day; migrateDayNotes converts text/date/id and deletes the DayNote; dedupe by id; reflection merge;
   plain entries on the same day never merged; tidy runs migrate + dedupe.
 - `JournalInsights`: grid shape for Sunday-first and Monday-first (Oct 2026: 1st is a Thursday);

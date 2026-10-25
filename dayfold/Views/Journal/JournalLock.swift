@@ -30,7 +30,7 @@ import LocalAuthentication
             #if DEBUG
             if CommandLine.arguments.contains("-locked") { return true }   // screenshots of the locked state
             #endif
-            return Self.canAuthenticate && UserDefaults.standard.bool(forKey: Self.storageKey)
+            return UserDefaults.standard.bool(forKey: Self.storageKey) && Self.canAuthenticate
         }
         set { withMutation(keyPath: \.isEnabled) { UserDefaults.standard.set(newValue, forKey: Self.storageKey) } }
     }
