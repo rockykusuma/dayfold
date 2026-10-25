@@ -2,15 +2,16 @@ import SwiftUI
 import SwiftData
 import DayfoldCore
 
-/// iPhone: Today, People, Search and Journal tabs. Mac: sidebar with Today, Journal, People, teams, and All waiting.
+/// iPhone: Today, People, Search, Journal and Notes tabs. Mac: sidebar with Today, Journal, Notes, People, teams, and All waiting.
 struct RootView: View {
     #if os(macOS)
-    enum SidebarItem: Hashable { case today, journal, people, team(String), waiting, search, tag(String) }
+    enum SidebarItem: Hashable { case today, journal, notes, people, team(String), waiting, search, tag(String) }
 
     @Query(sort: \Person.name) private var people: [Person]
     @Query(sort: \Entry.createdAt) private var entries: [Entry]
     #if DEBUG
     @State private var selection: SidebarItem? = CommandLine.arguments.contains("-search") ? .search
+        : CommandLine.arguments.contains("-notes") ? .notes
         : CommandLine.arguments.contains("-journal") || CommandLine.arguments.contains("-week") ? .journal : .today
     #else
     @State private var selection: SidebarItem? = .today
@@ -22,6 +23,7 @@ struct RootView: View {
             List(selection: $selection) {
                 Label("Today", systemImage: "calendar").tag(SidebarItem.today)
                 Label("Journal", systemImage: "book.closed").tag(SidebarItem.journal)
+                Label("Notes", systemImage: "books.vertical").tag(SidebarItem.notes)
                 Label("People", systemImage: "person.2").tag(SidebarItem.people)
                 Label("Search", systemImage: "magnifyingglass").tag(SidebarItem.search)
                 let tags = Tags.all(entries)
@@ -48,6 +50,7 @@ struct RootView: View {
             switch selection ?? .today {
             case .today: DayPageView()
             case .journal: NavigationStack { JournalView() }
+            case .notes: NotesView()
             case .people: NavigationStack { PeopleListView() }
             case .team(let team): NavigationStack { PeopleListView(team: team) }.id(team)
             case .waiting: NavigationStack { AllWaitingView() }
@@ -71,6 +74,7 @@ struct RootView: View {
     #if DEBUG
     @State private var tab = CommandLine.arguments.contains("-search") ? 2
         : CommandLine.arguments.contains("-journal") || CommandLine.arguments.contains("-week") ? 3
+        : CommandLine.arguments.contains("-notes") ? 4
         : CommandLine.arguments.contains("-people") || CommandLine.arguments.contains("-person") ? 1 : 0
     @Environment(\.modelContext) private var context
     #else
@@ -92,6 +96,9 @@ struct RootView: View {
             NavigationStack { JournalView() }
                 .tabItem { Label("Journal", systemImage: "book.closed") }
                 .tag(3)
+            NotesView()
+                .tabItem { Label("Notes", systemImage: "books.vertical") }
+                .tag(4)
         }
         #if DEBUG
         .task { applySearchFlag() }

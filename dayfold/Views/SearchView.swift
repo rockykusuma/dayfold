@@ -7,6 +7,7 @@ struct SearchView: View {
     @Query(sort: \Entry.createdAt) private var entries: [Entry]
     @Query(sort: \Person.name) private var people: [Person]
     @Query(sort: \JournalEntry.date, order: .reverse) private var journal: [JournalEntry]
+    @Query private var pages: [NotePage]
     @Bindable private var router = SearchRouter.shared
     @Environment(\.modelContext) private var context
     @State private var editing: Entry?
@@ -24,10 +25,11 @@ struct SearchView: View {
         let results = query.isEmpty ? [] : Search.results(entries, query: router.query)
         // Locked: no Journal section (its editor sheet hangs off the List, so it stays up).
         let journalMatches = query.isEmpty || JournalLock.shared.isHidden ? [] : Search.journal(journal, query: router.query)
+        let noteMatches = query.isEmpty ? [] : Search.pages(pages, query: router.query)
         List {
             if query.isEmpty {
                 browse
-            } else if results.isEmpty && journalMatches.isEmpty {
+            } else if results.isEmpty && journalMatches.isEmpty && noteMatches.isEmpty {
                 ContentUnavailableView {
                     Label { Text("Nothing matches").font(.system(.title2, design: .serif, weight: .semibold)) }
                           icon: { Image(systemName: "magnifyingglass") }
@@ -44,6 +46,24 @@ struct SearchView: View {
                         }
                     } header: {
                         Text("Journal").font(.system(.headline, design: .serif))
+                    }
+                }
+                if !noteMatches.isEmpty {
+                    Section {
+                        ForEach(noteMatches) { p in
+                            NavigationLink(value: PageRoute(page: p)) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(p.displayTitle).font(.system(.body, design: .serif, weight: .semibold))
+                                    if let crumb = p.pathCaption {
+                                        Text(crumb).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                                    }
+                                }
+                                .frame(minHeight: 44, alignment: .leading)
+                            }
+                            .listRowBackground(Color.clear)
+                        }
+                    } header: {
+                        Text("Notes").font(.system(.headline, design: .serif))
                     }
                 }
                 ForEach(Search.dayGroups(results)) { group in
@@ -71,6 +91,7 @@ struct SearchView: View {
         .searchSuggestions { suggestions }
         .sheet(item: $editing) { EntryEditor(entry: $0) }
         .sheet(item: $journalEditing) { JournalEditor(entry: $0) }
+        .navigationDestination(for: PageRoute.self) { PageView(page: $0.page, startEditing: $0.startEditing) }
         .navigationDestination(item: $openedPerson) { PersonView(person: $0) }
         // A tag tapped on a pushed person page should show its results, not stay on the page.
         .onChange(of: router.shown) { openedPerson = nil }
