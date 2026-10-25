@@ -1,6 +1,9 @@
 #if DEBUG
 import Foundation
 import SwiftData
+import CoreGraphics
+import ImageIO
+import UniformTypeIdentifiers
 import DayfoldCore
 
 /// Launch with `-demo` (or use in previews) for an in-memory store filled with a realistic day.
@@ -93,8 +96,47 @@ enum DemoData {
         Review.apply(.done, to: offsite, now: closed(4, 12))
         Review.apply(.drop, to: dashboards, now: closed(2, 10))
         ctx.insert(DayNote(day: at(1, 0, 0), text: "Long day of interviews. The migration finally feels close."))
-        ctx.insert(DayNote(day: at(2, 0, 0), text: "Quiet morning, good focus on the sync doc."))
+        ctx.insert(DayNote(day: at(2, 0, 0), text: "Quiet morning, good focus on the sync doc."))   // migrated by the first tidy
+
+        // Journal over the last 10 days (the two DayNotes above become reflections on days 1 and 2).
+        func journal(_ daysAgo: Int, _ hour: Int, _ minute: Int, title: String = "", _ text: String,
+                     bookmarked: Bool = false, reflection: Bool = false, photos: [(CGFloat, CGFloat, CGFloat)] = []) {
+            let when = at(daysAgo, hour, minute)
+            let e = JournalEntry(date: when, title: title, text: text, isBookmarked: bookmarked,
+                                 isReflection: reflection, createdAt: when, updatedAt: when)
+            ctx.insert(e)
+            for (i, rgb) in photos.enumerated() {
+                let photo = JournalPhoto(data: solidPhoto(rgb), order: Double(i), createdAt: when)
+                ctx.insert(photo)
+                photo.entry = e
+            }
+        }
+        journal(0, 8, 15, "Slept well for once. Want to keep the afternoon clear for the release sign-off.")
+        journal(3, 15, 30, title: "Offsite planning",
+                "Two days, somewhere we can walk. Morning on the platform roadmap, afternoon for the on-call pain list. Ask Meera about budget before booking.",
+                bookmarked: true)
+        journal(5, 21, 0, "Escalations summary took longer than it should. Felt scattered after lunch.", reflection: true)
+        journal(6, 18, 40, title: "Whiteboard from the sync review",
+                "Arjun's diagram finally made the conflict rules click.", photos: [(0.36, 0.52, 0.66)])
+        journal(9, 12, 10, "Lunch by the lake with the team. Sam talked about wanting more platform work.",
+                photos: [(0.55, 0.68, 0.45), (0.85, 0.66, 0.42)])
         return container
+    }
+
+    /// A small solid-colour image, imported the way picked photos are.
+    private static func solidPhoto(_ rgb: (CGFloat, CGFloat, CGFloat)) -> Data? {
+        let size = 600
+        guard let cg = CGContext(data: nil, width: size, height: size, bitsPerComponent: 8, bytesPerRow: 0,
+                                 space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue)
+        else { return nil }
+        cg.setFillColor(red: rgb.0, green: rgb.1, blue: rgb.2, alpha: 1)
+        cg.fill(CGRect(x: 0, y: 0, width: size, height: size))
+        let png = NSMutableData()
+        guard let image = cg.makeImage(),
+              let dest = CGImageDestinationCreateWithData(png, UTType.png.identifier as CFString, 1, nil) else { return nil }
+        CGImageDestinationAddImage(dest, image, nil)
+        guard CGImageDestinationFinalize(dest) else { return nil }
+        return PhotoImport.downscaled(png as Data)
     }
 }
 #endif

@@ -17,6 +17,7 @@ struct ReviewView: View {
     @State private var pushDate: Date
     @State private var note = ""
     @State private var savedNote = "" // what's stored; save only when `note` differs
+    @State private var noteLoaded = false
     @FocusState private var noteFocused: Bool
 
     private let calendar = Calendar.current
@@ -306,19 +307,21 @@ struct ReviewView: View {
                     .multilineTextAlignment(.center)
                     .padding(.top, 4)
             }
-            // Review always reviews today, so the field is always shown.
-            TextField("How did today go?", text: $note, axis: .vertical)
-                .lineLimit(1...3)
-                .font(.system(.body, design: .serif))
-                .focused($noteFocused)
-                .submitLabel(.done)
-                .onSubmit { saveNote(); noteFocused = false }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .frame(minHeight: 44)
-                .background(Color.card, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.separator, lineWidth: 0.5))
-                .padding(.top, 12)
+            // Review always reviews today, so the field is shown unless the journal is locked.
+            if !JournalLock.shared.isLocked {
+                TextField("How did today go?", text: $note, axis: .vertical)
+                    .lineLimit(1...3)
+                    .font(.system(.body, design: .serif))
+                    .focused($noteFocused)
+                    .submitLabel(.done)
+                    .onSubmit { saveNote(); noteFocused = false }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .frame(minHeight: 44)
+                    .background(Color.card, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.separator, lineWidth: 0.5))
+                    .padding(.top, 12)
+            }
             Button { saveNote(); dismiss() } label: { Text("Close").foregroundStyle(Color.paper) }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
@@ -327,10 +330,13 @@ struct ReviewView: View {
         }
         .readableWidth()
         .transition(.opacity)
-        .onAppear {
+        // Prefill only once unlocked; until then `note == savedNote == ""`, so saving writes nothing.
+        .onChange(of: JournalLock.shared.isLocked, initial: true) { _, locked in
+            guard !locked, !noteLoaded else { return }
             let existing = (try? Journal.reflection(for: today, in: context))?.text ?? ""
             note = existing
             savedNote = existing
+            noteLoaded = true
         }
         .onDisappear(perform: saveNote)
     }

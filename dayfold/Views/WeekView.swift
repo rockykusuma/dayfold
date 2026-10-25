@@ -21,6 +21,7 @@ struct WeekView: View {
     private var today: Date { calendar.startOfDay(for: Date()) }
     private var anchor: Date { calendar.date(byAdding: .day, value: 7 * weekOffset, to: Date()) ?? Date() }
     private var motion: Animation? { reduceMotion ? nil : .snappy }
+    private var locked: Bool { JournalLock.shared.isLocked }
 
     var body: some View {
         let review = WeekReview(entries: entries, journal: journal, containing: anchor, today: Date())
@@ -31,7 +32,7 @@ struct WeekView: View {
                 .listRowSeparator(.hidden)
                 .listRowBackground(Color.clear)
 
-            if review.isEmpty {
+            if review.isEmpty || (locked && review.done.isEmpty && review.stuck.isEmpty && review.waiting.isEmpty) {
                 emptyState
                     .listRowSeparator(.hidden)
                     .listRowBackground(Color.clear)
@@ -53,7 +54,7 @@ struct WeekView: View {
             if !review.waiting.isEmpty {
                 Section { groups(review.waiting) } header: { sectionHeader("Waiting on") }
             }
-            notesSection(review)
+            if !locked { notesSection(review) }   // its editor sheets hang off the List, so they stay up
         }
         .listStyle(.plain)
         .environment(\.defaultMinListRowHeight, 28) // person sub-headers; entry rows keep their 44pt marks

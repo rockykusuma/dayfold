@@ -135,6 +135,7 @@ struct JournalEditor: View {
             .interactiveDismissDisabled(hasChanges)   // swipe-down never drops writing; Cancel asks
             .onChange(of: picked) { importPicked() }
         }
+        .journalLockCover()   // relocked while open: hidden, but the draft in @State survives until unlocked
         #if os(macOS)
         .frame(minWidth: 520, minHeight: 560)
         #endif

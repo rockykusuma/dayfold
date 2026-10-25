@@ -89,16 +89,21 @@ struct JournalView: View {
         }
         .scrollContentBackground(.hidden)
         .background(Color.paper)
+        // A cover, not a view swap: the feed and any open editor sheet stay mounted, so relocking keeps a draft.
+        .journalLockCover()
         .navigationTitle("Journal")
         #if os(iOS)
         .toolbarTitleDisplayMode(.inline)
-        .safeAreaInset(edge: .bottom) { plusButton }   // the list insets its content, so the last card clears it
+        .safeAreaInset(edge: .bottom) {   // the list insets its content, so the last card clears it
+            if !JournalLock.shared.isLocked { plusButton }
+        }
         #else
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button { creating = true } label: { Label("New Entry", systemImage: "square.and.pencil") }
                     .keyboardShortcut("n", modifiers: [.command, .option])
                     .help("New Entry")
+                    .disabled(JournalLock.shared.isLocked)
             }
         }
         #endif
@@ -106,6 +111,14 @@ struct JournalView: View {
         .sheet(item: $editing) { JournalEditor(entry: $0) }
         .sheet(isPresented: $creating) { JournalEditor(entry: nil) }
         .navigationDestination(isPresented: $showWeek) { WeekView() }
+        #if DEBUG
+        // `-edit <title or text prefix>` opens that journal entry (screenshots can't tap).
+        .task {
+            let args = CommandLine.arguments
+            guard let i = args.firstIndex(of: "-edit"), i + 1 < args.count else { return }
+            editing = entries.first { $0.title.hasPrefix(args[i + 1]) || $0.text.hasPrefix(args[i + 1]) }
+        }
+        #endif
         .confirmationDialog("Delete this entry?", isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }),
                             titleVisibility: .visible, presenting: deleting) { entry in
             Button("Delete", role: .destructive) { withAnimation(motion) { context.delete(entry) } }

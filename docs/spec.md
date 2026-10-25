@@ -130,3 +130,16 @@ long-form journal view. (v0.2–v0.3; see README roadmap.)
 - 2026-10-25 Update text (Share/Copy) lists work-scoped entries only; the Week page itself shows everything.
 - 2026-10-25 Week page browses by a week offset from now (not a stored date), so it stays correct across midnight.
 - 2026-10-25 Recommend First Day of Week = Monday (Language & Region) on iPhone and Mac; the week follows the locale.
+- 2026-10-25 Journal (Apple Journal-inspired): `JournalEntry` (+ `JournalPhoto`) supersedes `DayNote`. `Maintenance.tidy`
+  migrates every DayNote into an `isReflection` entry (same id, 21:00 that day) and deletes it, then dedupes by id
+  (offline copies from two devices) and merges same-day reflections. `DayNote` stays in the schema (additive only).
+- 2026-10-25 No streaks, even though Apple Journal has them; no word counts or scores either.
+- 2026-10-25 Writing suggestions come from your own day (done, waiting, open, asked today) plus rotating prompts;
+  no JournalingSuggestions framework (iPhone-only, needs an entitlement).
+- 2026-10-25 Journal lock (Settings ▸ Journal, off by default; turning it on needs one successful Face ID / Touch ID /
+  passcode check) gates everything: Journal tab shows "Journal locked" + "Unlock"; Day page Journal section, Search
+  Journal section, Week page Notes and the Review reflection field are hidden. Relocks when the app goes to the
+  background (not on inactive — the auth prompt itself makes the app inactive). The lock is a cover, so an open
+  editor keeps its draft. Journal content is never in Share update / Copy, notifications or Services.
+- 2026-10-25 Photos are downscaled on import to a 2048 px long side (JPEG 0.8), up to 4 per entry, external storage.
+- Before the first TestFlight build: deploy the CloudKit schema (JournalEntry, JournalPhoto) to production in the CloudKit Console.

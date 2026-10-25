@@ -37,6 +37,8 @@ struct DayfoldApp: App {
         .onChange(of: scenePhase, initial: true) { _, phase in
             // Link legacy from: text, merge duplicate people, remove duplicate repeats.
             if phase == .active { try? Maintenance.tidy(in: container.mainContext) }
+            // Not on .inactive: the Face ID prompt itself makes the app inactive.
+            if phase == .background { JournalLock.shared.lock() }
         }
 
         #if os(macOS)

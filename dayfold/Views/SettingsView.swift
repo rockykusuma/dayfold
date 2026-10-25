@@ -2,7 +2,7 @@ import SwiftUI
 import CloudKit
 import UserNotifications
 
-/// Review time and days, notification permission, iCloud status.
+/// Review time and days, journal lock, notification permission, iCloud status.
 /// Mac: the app's Settings window (⌘,). iPhone: sheet from the gear button.
 struct SettingsView: View {
     @AppStorage(ReviewReminder.hourKey) private var hour = ReviewReminder.defaultHour
@@ -55,6 +55,10 @@ struct SettingsView: View {
                 HotKey.shared.apply(QuickCaptureHotkey(rawValue: hotkey) ?? .default) { QuickCapturePanel.shared.toggle() }
             }
             #endif
+
+            Section("Journal") {
+                Toggle(JournalLock.toggleTitle, isOn: lockToggle)
+            }
 
             Section("Notifications") {
                 LabeledContent("Permission") {
@@ -111,6 +115,20 @@ struct SettingsView: View {
                 let c = calendar.dateComponents([.hour, .minute], from: $0)
                 hour = c.hour ?? ReviewReminder.defaultHour
                 minute = c.minute ?? ReviewReminder.defaultMinute
+            }
+        )
+    }
+
+    /// On needs one successful unlock (else it stays off); off needs none.
+    private var lockToggle: Binding<Bool> {
+        Binding(
+            get: { JournalLock.shared.isEnabled },
+            set: { on in
+                if on {
+                    Task { if await JournalLock.shared.unlock() { JournalLock.shared.isEnabled = true } }
+                } else {
+                    JournalLock.shared.isEnabled = false
+                }
             }
         )
     }
