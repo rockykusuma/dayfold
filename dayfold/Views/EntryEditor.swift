@@ -136,6 +136,7 @@ struct EntryEditor: View {
                     dismiss()
                 }  }
             }
+            .keyboardDismissButton()
             .sheet(isPresented: $changingPerson) {
                 PeoplePicker(title: "Change person") { picked in
                     entry.person = picked

@@ -49,6 +49,7 @@ struct PersonEditor: View {
             .scrollContentBackground(.hidden)
             .background(Color.paper)
             .navigationTitle("Edit")
+            .keyboardDismissButton()
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") {

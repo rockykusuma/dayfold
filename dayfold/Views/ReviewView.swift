@@ -100,6 +100,7 @@ struct ReviewView: View {
             #if os(iOS)
             .toolbarTitleDisplayMode(.inline)
             #endif
+            .keyboardDismissButton()
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(finished ? "Close" : "Later") { dismiss() }

@@ -319,6 +319,7 @@ private struct NoteSheet: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) { Button("Save", action: save) }
             }
+            .keyboardDismissButton()
         }
         .presentationDetents([.medium, .large])
         #if os(macOS)

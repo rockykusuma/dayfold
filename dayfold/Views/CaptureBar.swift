@@ -73,17 +73,19 @@ struct CaptureBar: View {
                 .background(Color.card, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.separator, lineWidth: 0.5))
 
-                Button(action: save) {
-                    Image(systemName: "arrow.up.circle.fill")
-                        .font(.system(size: 30))
-                        .foregroundStyle(trimmed.isEmpty ? AnyShapeStyle(.quaternary) : AnyShapeStyle(.tint))
+                Button(action: offersHideKeyboard ? { focus.wrappedValue = false } : save) {
+                    Image(systemName: offersHideKeyboard ? "keyboard.chevron.compact.down" : "arrow.up.circle.fill")
+                        .font(.system(size: offersHideKeyboard ? 22 : 30))
+                        .foregroundStyle(offersHideKeyboard ? AnyShapeStyle(.secondary)
+                                         : trimmed.isEmpty ? AnyShapeStyle(.quaternary) : AnyShapeStyle(.tint))
+                        .contentTransition(.symbolEffect(.replace))
                         .frame(width: 44, height: 44)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .disabled(trimmed.isEmpty)
+                .disabled(trimmed.isEmpty && !offersHideKeyboard)
                 .keyboardShortcut(.return, modifiers: .command)
-                .accessibilityLabel("Add")
+                .accessibilityLabel(offersHideKeyboard ? "Hide keyboard" : "Add")
                 .sensoryFeedback(.impact(weight: .light), trigger: saved)
             }
         }
@@ -144,8 +146,22 @@ struct CaptureBar: View {
 
     private var trimmed: String { text.trimmingCharacters(in: .whitespacesAndNewlines) }
 
+    /// iPhone: while the keyboard is up and nothing is typed, the send button hides the keyboard instead.
+    private var offersHideKeyboard: Bool {
+        #if os(iOS)
+        focus.wrappedValue && trimmed.isEmpty
+        #else
+        false
+        #endif
+    }
+
     private func save() {
-        guard !trimmed.isEmpty else { return }
+        guard !trimmed.isEmpty else {
+            #if os(iOS)
+            focus.wrappedValue = false   // Return on an empty field puts the keyboard away
+            #endif
+            return
+        }
         withAnimation(.snappy) {
             let link = linkedTo.map { Capture.Link(person: $0.person, link: $0.link) }
             if trimmed.contains(where: \.isNewline) {
