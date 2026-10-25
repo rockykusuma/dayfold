@@ -81,6 +81,16 @@ struct NotePageTests {
         #expect(Pages.sorted([twinA, twinB]).map(\.id) == twins.map(\.id))
     }
 
+    @Test func tidyRemovesStaleBlankPages() throws {
+        let now = at(2026,10,25,12)
+        let stale = NotePage(updatedAt: at(2026,10,23,12)), fresh = NotePage(updatedAt: at(2026,10,25,11))
+        let titled = NotePage(title: "Keep", updatedAt: at(2026,10,1))
+        [stale, fresh, titled].forEach(context.insert)
+        try Maintenance.tidy(in: context, now: now)
+        let left = try context.fetch(FetchDescriptor<NotePage>()).map(\.id)
+        #expect(Set(left) == [fresh.id, titled.id])
+    }
+
     @Test func descendants() {
         let a = page("A"); let b = page("B", in: a); _ = page("C", in: b); _ = page("D", in: a)
         #expect(Set(Pages.descendants(of: a).map(\.title)) == ["B", "C", "D"])

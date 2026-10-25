@@ -97,6 +97,9 @@ struct PageView: View {
         // The app may be killed in the background before edit mode ends: rewrite links now, not only on leaving.
         .onChange(of: scenePhase) { _, phase in
             guard phase != .active, editing else { return }
+            // A half-typed title ("Q" on the way to "Q4 plan") must not merge links into an existing page "Q"; Done still renames.
+            let k = PageLinks.key(page.title)
+            guard !allPages.contains(where: { $0.id != page.id && !$0.isDeleted && PageLinks.key($0.title) == k }) else { return }
             PageLinks.rename(from: startTitle, to: page.title, in: allPages)
             try? context.save()   // don't wait for autosave: the app can be killed from here
             if !page.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { startTitle = page.title }
