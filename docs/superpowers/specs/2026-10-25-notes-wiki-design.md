@@ -116,6 +116,7 @@ children), `sortedChildren` (by `displayTitle`, localized).
 - Toolbar: Edit/Done; Pin/Unpin; Share (`ShareLink` with "# Title\n\nbody"); menu: Move… (picker of all
   pages except itself and its descendants, plus "Top level"), Delete Page (confirmation "Delete “Title”?"
   message "Its subpages move up a level.").
+- **Format bar** (replaces the insert row; see docs/spec.md 2026-10-25 "Notes formatting"): `PageFormat` edits on the body + selection.
 - **Edit mode** (inline, same screen): title `TextField` (serif, "Title"); body `TextEditor` (placeholder
   "Write in Markdown…"); an insert row above the editor with buttons Heading (`# `), Bullet (`- `),
   Checkbox (`- [ ] `), Link (`[[`, left open so the suggestion strip shows) that insert at the end of the body (cursor placement isn't available

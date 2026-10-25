@@ -138,11 +138,13 @@ enum DemoData {
             - Post the release notes draft in #platform
 
             ## Ship it
+            1. Tag the build
+            2. Run the script, ~~by hand~~ from CI
             ```
             ./scripts/release --tag v2.4
             ```
 
-            > If in doubt, don't ship on a Friday.
+            > If in doubt, ++don't++ ship on a _Friday_.
             """, daysAgo: 3)
         _ = page("Team — Platform", """
             Owns sync, on-call tooling and the release train.

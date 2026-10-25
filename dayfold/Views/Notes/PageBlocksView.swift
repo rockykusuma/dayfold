@@ -31,6 +31,12 @@ struct PageBlocksView: View {
                 Self.inline(text)
             }
             .padding(.leading, CGFloat(indent) * 16)
+        case .numbered(let number, let text, let indent):
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Text(verbatim: "\(number).").monospacedDigit().foregroundStyle(.secondary)
+                Self.inline(text)
+            }
+            .padding(.leading, CGFloat(indent) * 16)
         case .checkbox(let checked, let text, let line, let indent):
             HStack(spacing: 4) {
                 Button { onToggle(line) } label: {
@@ -81,13 +87,35 @@ struct PageBlocksView: View {
         }
     }
 
-    /// Bold/italic/code/links via `AttributedString(markdown:)`; `[[links]]` become `dayfold-page:` URLs first.
+    /// Bold/italic/strikethrough/code/links via `AttributedString(markdown:)`; `[[links]]` become `dayfold-page:` URLs first;
+    /// `++text++` underlines (Markdown has no underline).
     static func inline(_ text: String) -> Text {
         styled(text).map(Text.init) ?? Text(verbatim: text)
     }
 
     private static func styled(_ text: String) -> AttributedString? {
         let options = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
-        return try? AttributedString(markdown: PageLinks.inlineMarkdown(text), options: options)
+        guard var s = try? AttributedString(markdown: PageLinks.inlineMarkdown(text), options: options) else { return nil }
+        // Pairs like emphasis: an opening `++` is followed by a non-space, a closing one follows one ("C++ and C++" stays).
+        // ponytail: also applies inside `inline code`; check the code run if that ever matters.
+        let chars = Array(s.characters)
+        var pairs: [(open: Int, close: Int)] = [], open: Int?, i = 0
+        while i + 1 < chars.count {
+            guard chars[i] == "+", chars[i + 1] == "+" else { i += 1; continue }
+            if let o = open, i > o + 2, !chars[i - 1].isWhitespace {
+                pairs.append((o, i)); open = nil
+            } else if open == nil, i + 2 < chars.count, !chars[i + 2].isWhitespace {
+                open = i
+            }
+            i += 2
+        }
+        // Back to front with fresh indices: every mutation invalidates the old ones.
+        for p in pairs.reversed() {
+            func at(_ k: Int) -> AttributedString.Index { s.characters.index(s.startIndex, offsetBy: k) }
+            s[at(p.open + 2)..<at(p.close)].swiftUI.underlineStyle = .single
+            s.removeSubrange(at(p.close)..<at(p.close + 2))
+            s.removeSubrange(at(p.open)..<at(p.open + 2))
+        }
+        return s
     }
 }

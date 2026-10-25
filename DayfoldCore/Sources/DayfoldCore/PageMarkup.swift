@@ -4,6 +4,8 @@ public enum PageBlock: Equatable {
     case heading(level: Int, text: String)
     case paragraph(String)
     case bullet(text: String, indent: Int)
+    /// `1. text` / `1) text`; the number is shown as typed.
+    case numbered(number: Int, text: String, indent: Int)
     case checkbox(checked: Bool, text: String, line: Int, indent: Int)
     case quote(String)
     case code(String)
@@ -36,6 +38,9 @@ public enum PageMarkup {
                 flush(); out.append(.checkbox(checked: box.checked, text: box.text, line: n, indent: box.indent)); continue
             }
             if let item = bullet(line) { flush(); out.append(.bullet(text: item.text, indent: item.indent)); continue }
+            if let item = numbered(line) {
+                flush(); out.append(.numbered(number: item.number, text: item.text, indent: item.indent)); continue
+            }
             if trimmed.hasPrefix("> ") { flush(); out.append(.quote(String(trimmed.dropFirst(2)))); continue }
             para.append(line)
         }
@@ -68,16 +73,16 @@ public enum PageMarkup {
         }
     }
 
-    // MARK: Private
+    // MARK: Line parsing (also used by `PageFormat`)
 
-    private static func heading(_ s: String) -> PageBlock? {
+    static func heading(_ s: String) -> PageBlock? {
         let hashes = s.prefix { $0 == "#" }.count
         guard (1...6).contains(hashes), s.dropFirst(hashes).first == " " else { return nil }
         return .heading(level: hashes, text: s.dropFirst(hashes).trimmingCharacters(in: .whitespaces))
     }
 
     /// Leading spaces and the text after a `- ` / `* ` marker.
-    private static func bullet(_ line: String) -> (indent: Int, text: String)? {
+    static func bullet(_ line: String) -> (indent: Int, text: String)? {
         let spaces = line.prefix { $0 == " " }.count
         let rest = line.dropFirst(spaces)
         guard rest.hasPrefix("- ") || rest.hasPrefix("* ") else { return nil }
@@ -85,7 +90,7 @@ public enum PageMarkup {
     }
 
     /// `bracket` is the character offset of `[` within the line; `indent` as for bullets.
-    private static func checkbox(_ line: String) -> (checked: Bool, text: String, bracket: Int, indent: Int)? {
+    static func checkbox(_ line: String) -> (checked: Bool, text: String, bracket: Int, indent: Int)? {
         guard let item = bullet(line) else { return nil }
         let t = item.text
         guard t.count >= 3, t.hasPrefix("["), t[t.index(t.startIndex, offsetBy: 2)] == "]" else { return nil }
@@ -95,5 +100,16 @@ public enum PageMarkup {
         guard after.isEmpty || after.first == " " else { return nil }
         let spaces = line.prefix { $0 == " " }.count
         return (mark != " ", after.trimmingCharacters(in: .whitespaces), spaces + 2, item.indent)
+    }
+
+    /// Leading spaces, the number and the text after a `1. ` / `1) ` marker (up to 9 digits).
+    static func numbered(_ line: String) -> (indent: Int, number: Int, text: String)? {
+        let spaces = line.prefix { $0 == " " }.count
+        let rest = line.dropFirst(spaces)
+        let digits = rest.prefix { $0.isASCII && $0.isNumber }
+        guard (1...9).contains(digits.count), let n = Int(digits) else { return nil }
+        let after = rest.dropFirst(digits.count)
+        guard after.hasPrefix(". ") || after.hasPrefix(") ") else { return nil }
+        return (spaces / 2, n, String(after.dropFirst(2)))
     }
 }

@@ -77,12 +77,12 @@ struct NotesView: View {
             }
         }
         #if DEBUG
-        // `-notes -page <title prefix>` opens the first matching page (screenshots can't tap).
+        // `-notes -page <title prefix>` opens the first matching page (`-editing`: in edit mode); screenshots can't tap.
         .task {
             let args = CommandLine.arguments
             guard let i = args.firstIndex(of: "-page"), i + 1 < args.count else { return }
             let prefix = args[i + 1].lowercased()
-            if let p = Pages.sorted(pages).first(where: { $0.title.lowercased().hasPrefix(prefix) }) { path = [PageRoute(page: p)] }
+            if let p = Pages.sorted(pages).first(where: { $0.title.lowercased().hasPrefix(prefix) }) { path = [PageRoute(page: p, startEditing: args.contains("-editing"))] }
         }
         #endif
     }
