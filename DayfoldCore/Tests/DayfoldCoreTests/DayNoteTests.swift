@@ -76,6 +76,10 @@ struct DayNoteTests {
         context.insert(DayNote(day: at(2026,10,19), text: "A", updatedAt: at(2026,10,19,20), calendar: ist))
         context.insert(DayNote(day: at(2026,10,19), text: "B", updatedAt: at(2026,10,19,21), calendar: ist))
         try Maintenance.tidy(in: context)
-        #expect(try all().count == 1)
+        // tidy migrates DayNotes into reflection entries, then merges same-day reflections
+        #expect(try all().isEmpty)
+        let reflections = try context.fetch(FetchDescriptor<JournalEntry>())
+        #expect(reflections.count == 1)
+        #expect(reflections[0].text == "A\nB")
     }
 }
