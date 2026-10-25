@@ -55,6 +55,10 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
+            argument = "-initCloudKitSchema"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
             argument = "-review"
             isEnabled = "NO">
          </CommandLineArgument>

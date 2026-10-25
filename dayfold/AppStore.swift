@@ -32,7 +32,8 @@ enum AppStore {
     #if DEBUG
     /// `-initCloudKitSchema` (run once from Xcode, signed into iCloud): writes every record type and field to the CloudKit
     /// *Development* schema, so "Deploy Schema Changes…" has the complete schema even for types never saved yet.
-    /// Apple's recipe: a Core Data CloudKit container over the same store, then removed before SwiftData opens it.
+    /// Apple's recipe: a Core Data CloudKit container over the same store. The app then quits: that container's mirroring
+    /// keeps running in the background and crashes once its store is gone, so this is a one-shot tool, not a launch mode.
     private static func initializeCloudKitSchema(_ types: [any PersistentModel.Type], at url: URL) {
         do {
             try autoreleasepool {
@@ -48,9 +49,11 @@ enum AppStore {
                     try container.persistentStoreCoordinator.remove(store)
                 }
             }
-            print("CloudKit schema initialized")
+            print("CloudKit schema initialized — remove -initCloudKitSchema and run again")
+            exit(0)
         } catch {
             print("CloudKit schema failed: \(error)")
+            exit(1)
         }
     }
     #endif
