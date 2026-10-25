@@ -63,7 +63,22 @@ struct NotePageTests {
     @Test func breadcrumbCycleGuard() {
         let a = page("A"); let b = page("B", in: a)
         a.parent = b
-        #expect(Pages.breadcrumb(a).count <= 50)
+        #expect(Pages.breadcrumb(a).count == 50)
+    }
+
+    @Test func sortedTieBreak() {
+        let r = page("R")
+        let late = NotePage(title: "Plan", parent: r, createdAt: at(2026,10,5))
+        let early = NotePage(title: "Plan", parent: r, createdAt: at(2026,10,1))
+        let item10 = NotePage(title: "Item 10", parent: r), item2 = NotePage(title: "Item 2", parent: r)
+        let twinA = NotePage(title: "Twin", createdAt: at(2026,10,1)), twinB = NotePage(title: "Twin", createdAt: at(2026,10,1))
+        for p in [late, early, item10, item2, twinA, twinB] { context.insert(p) }
+        for p in [late, early, item10, item2] { p.parent = r }
+        #expect(r.sortedChildren.map(\.id) == [item2.id, item10.id, early.id, late.id])
+        #expect(Pages.sorted([late, early]).map(\.id) == [early.id, late.id])
+        let twins = [twinA, twinB].sorted { $0.id.uuidString < $1.id.uuidString }
+        #expect(Pages.sorted([twinB, twinA]).map(\.id) == twins.map(\.id))
+        #expect(Pages.sorted([twinA, twinB]).map(\.id) == twins.map(\.id))
     }
 
     @Test func descendants() {

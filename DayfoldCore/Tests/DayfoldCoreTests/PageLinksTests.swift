@@ -46,6 +46,15 @@ struct PageLinksTests {
         #expect(a.updatedAt == now && b.updatedAt == now && c.updatedAt == at(2026,10,1))
     }
 
+    @Test func renameRoundTrip() {
+        let vendor = page("Vendor"), a = page("a", "Call [[Vendor]] or [[vendor|them]]")
+        vendor.title = "Vendor old"
+        PageLinks.rename(from: "Vendor", to: vendor.title, in: [vendor, a], now: at(2026,10,9))
+        #expect(a.body == "Call [[Vendor old]] or [[Vendor old|them]]")
+        #expect(PageLinks.titles(in: a.body).compactMap { PageLinks.resolve($0, in: [vendor, a]) }.map(\.id) == [vendor.id])
+        #expect(PageLinks.backlinks(to: vendor, in: [vendor, a]).map(\.id) == [a.id])
+    }
+
     @Test func renameCaseOnlyNoop() {
         let a = page("a", "[[release process]]")
         PageLinks.rename(from: "release process", to: "Release Process", in: [a], now: at(2026,10,9))
@@ -62,6 +71,12 @@ struct PageLinksTests {
         #expect(String(attr.characters) == "x Q3 & Q4 plan #1 y")
         let tricky = try AttributedString(markdown: PageLinks.inlineMarkdown("[[50% (a)?|see [this]]]"))
         #expect(tricky.runs.compactMap(\.link).compactMap(PageLinks.title(from:)) == ["50% (a)?"])
+    }
+
+    @Test func inlineBackslash() throws {
+        let attr = try AttributedString(markdown: PageLinks.inlineMarkdown("[[Paths|C:\\]] after"))
+        #expect(attr.runs.compactMap(\.link).compactMap(PageLinks.title(from:)) == ["Paths"])
+        #expect(String(attr.characters) == "C:\\ after")
     }
 
     @Test func completionTokens() {

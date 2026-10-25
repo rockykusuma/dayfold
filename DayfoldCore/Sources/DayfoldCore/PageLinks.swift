@@ -30,6 +30,7 @@ public enum PageLinks {
     }
 
     /// Rewrites `[[old]]` / `[[old|label]]` in every body. Only changed pages get `updatedAt = now`.
+    /// Titles must not contain `[`, `]`, `|` or newlines (the title field drops them), or the rewritten links won't parse.
     public static func rename(from old: String, to new: String, in pages: [NotePage], now: Date = Date()) {
         let oldKey = key(old), newTitle = new.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !oldKey.isEmpty, !newTitle.isEmpty, oldKey != key(newTitle) else { return }
@@ -46,7 +47,8 @@ public enum PageLinks {
     public static func inlineMarkdown(_ text: String) -> String {
         var out = text
         for link in links(in: text).reversed() {
-            let shown = (link.label ?? link.target).replacingOccurrences(of: "[", with: "\\[").replacingOccurrences(of: "]", with: "\\]")
+            let shown = (link.label ?? link.target).replacingOccurrences(of: "\\", with: "\\\\")
+                .replacingOccurrences(of: "[", with: "\\[").replacingOccurrences(of: "]", with: "\\]")
             let enc = link.target.addingPercentEncoding(withAllowedCharacters: allowed) ?? link.target
             out.replaceSubrange(link.range, with: "[\(shown)](\(scheme):\(enc))")
         }

@@ -118,7 +118,7 @@ children), `sortedChildren` (by `displayTitle`, localized).
   message "Its subpages move up a level.").
 - **Edit mode** (inline, same screen): title `TextField` (serif, "Title"); body `TextEditor` (placeholder
   "Write in Markdown…"); an insert row above the editor with buttons Heading (`# `), Bullet (`- `),
-  Checkbox (`- [ ] `), Link (`[[]]`) that insert at the end of the body (cursor placement isn't available
+  Checkbox (`- [ ] `), Link (`[[`, left open so the suggestion strip shows) that insert at the end of the body (cursor placement isn't available
   for `TextEditor` on iOS 17 — append on a new line); a suggestion strip of matching page titles while
   `completionToken` is non-nil (tap completes `[[Title]]`). Edits write straight to the model (autosave,
   `updatedAt = now` on change). On leaving edit mode (Done, back, tab switch): if the title changed,

@@ -10,7 +10,7 @@ extension NotePage {
     }
 }
 
-/// The Notes tab: pinned pages, then top-level pages; search switches to flat results with breadcrumbs.
+/// The Notes tab: pinned pages, then unpinned top-level pages; search switches to flat results with breadcrumbs.
 struct NotesView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -20,9 +20,6 @@ struct NotesView: View {
     @State private var deleting: NotePage?
 
     private var motion: Animation? { reduceMotion ? nil : .snappy }
-    private func sorted(_ p: [NotePage]) -> [NotePage] {
-        p.sorted { $0.displayTitle.localizedCaseInsensitiveCompare($1.displayTitle) == .orderedAscending }
-    }
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -42,11 +39,11 @@ struct NotesView: View {
                 } else if pages.isEmpty {
                     emptyState
                 } else {
-                    let pinned = sorted(pages.filter(\.isPinned))
+                    let pinned = Pages.sorted(pages.filter(\.isPinned))
                     if !pinned.isEmpty {
                         Section { ForEach(pinned) { row($0) } } header: { header("Pinned") }
                     }
-                    Section { ForEach(sorted(pages.filter { $0.parent == nil })) { row($0) } } header: { header("Pages") }
+                    Section { ForEach(Pages.sorted(pages.filter { $0.parent == nil && !$0.isPinned })) { row($0) } } header: { header("Pages") }
                 }
             }
             .listStyle(.plain)
@@ -76,7 +73,7 @@ struct NotesView: View {
             let args = CommandLine.arguments
             guard let i = args.firstIndex(of: "-page"), i + 1 < args.count else { return }
             let prefix = args[i + 1].lowercased()
-            if let p = sorted(pages).first(where: { $0.title.lowercased().hasPrefix(prefix) }) { path = [PageRoute(page: p)] }
+            if let p = Pages.sorted(pages).first(where: { $0.title.lowercased().hasPrefix(prefix) }) { path = [PageRoute(page: p)] }
         }
         #endif
     }

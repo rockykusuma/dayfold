@@ -31,25 +31,26 @@ struct PageBlocksView: View {
                 Self.inline(text)
             }
             .padding(.leading, CGFloat(indent) * 16)
-        case .checkbox(let checked, let text, let line):
+        case .checkbox(let checked, let text, let line, let indent):
             HStack(spacing: 4) {
                 Button { onToggle(line) } label: {
                     Image(systemName: checked ? "checkmark.circle.fill" : "circle")
                         .font(.title3)
                         .foregroundStyle(checked ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
-                        .frame(width: 44, height: 44)
+                        .frame(minWidth: 44, minHeight: 44)
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .padding(.leading, -12)   // keep the mark aligned with text while the target stays 44pt
-                .accessibilityLabel(Self.plain(text))
-                .accessibilityValue(checked ? "Checked" : "Unchecked")
+                .accessibilityLabel("Toggle")
+                .accessibilityValue(checked ? "Checked" : "Not checked")
+                // Stays its own VoiceOver element so links inside it are reachable.
                 Self.inline(text)
                     .foregroundStyle(checked ? .secondary : .primary)
                     .strikethrough(checked, color: .secondary)
-                    .accessibilityHidden(true)
             }
             .padding(.vertical, -5)   // 44pt rows sit flush (not 54pt apart), so a checklist reads like the bullets
+            .padding(.leading, CGFloat(indent) * 16)
         case .quote(let text):
             Self.inline(text)
                 .foregroundStyle(.secondary)
@@ -83,11 +84,6 @@ struct PageBlocksView: View {
     /// Bold/italic/code/links via `AttributedString(markdown:)`; `[[links]]` become `dayfold-page:` URLs first.
     static func inline(_ text: String) -> Text {
         styled(text).map(Text.init) ?? Text(verbatim: text)
-    }
-
-    /// The rendered words without Markdown marks (`**`, `[[ ]]`), for VoiceOver labels.
-    static func plain(_ text: String) -> String {
-        styled(text).map { String($0.characters) } ?? text
     }
 
     private static func styled(_ text: String) -> AttributedString? {

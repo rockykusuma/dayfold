@@ -21,12 +21,17 @@ struct PageEditor: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            TextField("Title", text: field(\.title))
+            TextField("Title", text: titleField)
                 .font(.system(.largeTitle, design: .serif, weight: .bold))
                 .textFieldStyle(.plain)
                 .focused($focus, equals: .title)
                 .submitLabel(.next)
                 .onSubmit { focus = .body }
+            if hasDuplicateTitle {
+                Text("Another page has this title")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
             insertRow
             suggestionStrip
             TextEditor(text: field(\.body))
@@ -124,6 +129,16 @@ struct PageEditor: View {
         guard page[keyPath: key] != value else { return }
         page[keyPath: key] = value
         page.updatedAt = Date()
+    }
+
+    /// `[`, `]`, `|` and newlines would break `[[links]]` to this page, so they're dropped as typed or pasted.
+    private var titleField: Binding<String> {
+        Binding(get: { page.title }, set: { set(\.title, $0.filter { !"[]|".contains($0) && !$0.isNewline }) })
+    }
+
+    private var hasDuplicateTitle: Bool {
+        let k = PageLinks.key(page.title)
+        return !k.isEmpty && allPages.contains { $0.id != page.id && !$0.isDeleted && PageLinks.key($0.title) == k }
     }
 
     private func field(_ key: ReferenceWritableKeyPath<NotePage, String>) -> Binding<String> {

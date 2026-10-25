@@ -35,11 +35,22 @@ public final class NotePage {
     }
 
     public var sortedChildren: [NotePage] {
-        (children ?? []).sorted { $0.displayTitle.localizedCaseInsensitiveCompare($1.displayTitle) == .orderedAscending }
+        Pages.sorted(children ?? [])
     }
 }
 
 public enum Pages {
+    /// By title (Finder order), then oldest first, then id, so equal titles never swap places between renders.
+    public static func sorted(_ pages: [NotePage]) -> [NotePage] {
+        pages.sorted { a, b in
+            switch a.displayTitle.localizedStandardCompare(b.displayTitle) {
+            case .orderedAscending: return true
+            case .orderedDescending: return false
+            case .orderedSame: return a.createdAt != b.createdAt ? a.createdAt < b.createdAt : a.id.uuidString < b.id.uuidString
+            }
+        }
+    }
+
     /// Subpages move up a level; nothing below is deleted. Doesn't save (autosave).
     public static func delete(_ page: NotePage, in context: ModelContext) {
         let up = page.parent

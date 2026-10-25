@@ -58,7 +58,7 @@ public enum Search {
     }
 
     /// Note pages whose title + body contain every plain word (AND, case/diacritic-insensitive).
-    /// Title matches first, then body-only; each group newest `updatedAt` first. `#`, `@`, `is:` tokens find nothing.
+    /// Title matches first, then body-only; each group newest `updatedAt` first, ties by title. `#`, `@`, `is:` tokens find nothing.
     public static func pages(_ pages: [NotePage], query: String) -> [NotePage] {
         let raw = query.split(whereSeparator: \.isWhitespace)
         guard !raw.contains(where: { $0.hasPrefix("#") || $0.hasPrefix("@") || $0.lowercased().hasPrefix("is:") }) else { return [] }
@@ -70,7 +70,9 @@ public enum Search {
             .filter { p in let h = PeopleDirectory.normalize(p.title + " " + p.body); return keys.allSatisfy(h.contains) }
             .sorted { a, b in
                 let (x, y) = (inTitle(a), inTitle(b))
-                return x != y ? x : a.updatedAt > b.updatedAt
+                if x != y { return x }
+                if a.updatedAt != b.updatedAt { return a.updatedAt > b.updatedAt }
+                return a.displayTitle.localizedStandardCompare(b.displayTitle) == .orderedAscending
             }
     }
 

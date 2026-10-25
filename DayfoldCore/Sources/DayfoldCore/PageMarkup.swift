@@ -4,7 +4,7 @@ public enum PageBlock: Equatable {
     case heading(level: Int, text: String)
     case paragraph(String)
     case bullet(text: String, indent: Int)
-    case checkbox(checked: Bool, text: String, line: Int)
+    case checkbox(checked: Bool, text: String, line: Int, indent: Int)
     case quote(String)
     case code(String)
     case divider
@@ -33,7 +33,7 @@ public enum PageMarkup {
             if let h = heading(trimmed) { flush(); out.append(h); continue }
             if ["---", "***", "___"].contains(trimmed) { flush(); out.append(.divider); continue }
             if let box = checkbox(line) {
-                flush(); out.append(.checkbox(checked: box.checked, text: box.text, line: n)); continue
+                flush(); out.append(.checkbox(checked: box.checked, text: box.text, line: n, indent: box.indent)); continue
             }
             if let item = bullet(line) { flush(); out.append(.bullet(text: item.text, indent: item.indent)); continue }
             if trimmed.hasPrefix("> ") { flush(); out.append(.quote(String(trimmed.dropFirst(2)))); continue }
@@ -84,8 +84,8 @@ public enum PageMarkup {
         return (spaces / 2, String(rest.dropFirst(2)))
     }
 
-    /// `bracket` is the character offset of `[` within the line.
-    private static func checkbox(_ line: String) -> (checked: Bool, text: String, bracket: Int)? {
+    /// `bracket` is the character offset of `[` within the line; `indent` as for bullets.
+    private static func checkbox(_ line: String) -> (checked: Bool, text: String, bracket: Int, indent: Int)? {
         guard let item = bullet(line) else { return nil }
         let t = item.text
         guard t.count >= 3, t.hasPrefix("["), t[t.index(t.startIndex, offsetBy: 2)] == "]" else { return nil }
@@ -94,6 +94,6 @@ public enum PageMarkup {
         let after = t.dropFirst(3)
         guard after.isEmpty || after.first == " " else { return nil }
         let spaces = line.prefix { $0 == " " }.count
-        return (mark != " ", after.trimmingCharacters(in: .whitespaces), spaces + 2)
+        return (mark != " ", after.trimmingCharacters(in: .whitespaces), spaces + 2, item.indent)
     }
 }

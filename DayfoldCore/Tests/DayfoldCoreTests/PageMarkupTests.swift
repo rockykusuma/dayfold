@@ -17,8 +17,14 @@ struct PageMarkupTests {
 
     @Test func checkboxes() {
         #expect(PageMarkup.blocks("- [ ] a\n- [X] b\n* [x] c") == [
-            .checkbox(checked: false, text: "a", line: 0), .checkbox(checked: true, text: "b", line: 1),
-            .checkbox(checked: true, text: "c", line: 2)])
+            .checkbox(checked: false, text: "a", line: 0, indent: 0), .checkbox(checked: true, text: "b", line: 1, indent: 0),
+            .checkbox(checked: true, text: "c", line: 2, indent: 0)])
+    }
+
+    @Test func nestedCheckboxes() {
+        #expect(PageMarkup.blocks("- [ ] a\n  - [x] b\n    - [ ] c\n   - [ ] d") == [
+            .checkbox(checked: false, text: "a", line: 0, indent: 0), .checkbox(checked: true, text: "b", line: 1, indent: 1),
+            .checkbox(checked: false, text: "c", line: 2, indent: 2), .checkbox(checked: false, text: "d", line: 3, indent: 1)])
     }
 
     @Test func quoteAndDivider() {

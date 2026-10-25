@@ -159,5 +159,6 @@ long-form journal view. (v0.2–v0.3; see README roadmap.)
 - 2026-10-25 Blank pages (no title, no body, no subpages) are removed when left, so "+" never leaves "Untitled" litter.
 - 2026-10-25 Tapping a link to a missing page asks "Create page “<Title>”?" and creates it top level (easy to find; Move… files it later).
 - 2026-10-25 The editor's insert row (Heading, Bullet, Checkbox, Link) appends a line at the end of the body: SwiftUI's `TextEditor` has no cursor API on iOS 17 / macOS 14.
+- 2026-10-25 The insert row's Link button inserts an open `[[` (not `[[]]`), so the title suggestion strip appears; tapping a suggestion closes the link.
 - 2026-10-25 On compact width the page toolbar shows More + Edit only (Pin and Share move into More): four items pushed Edit off an iPhone SE's bar.
 - Before the first TestFlight build: deploy the CloudKit schema (NotePage) to production in the CloudKit Console.

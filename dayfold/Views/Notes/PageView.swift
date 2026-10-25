@@ -21,6 +21,7 @@ struct PageView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var context
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var sizeClass
     private var compact: Bool { sizeClass == .compact }
@@ -93,6 +94,12 @@ struct PageView: View {
         .sensoryFeedback(.impact(weight: .light), trigger: toggles)
         // Back gesture, tab switch, window close: same as Done, but no pop (we're already leaving).
         .onDisappear { finishEditing(pop: false) }
+        // The app may be killed in the background before edit mode ends: rewrite links now, not only on leaving.
+        .onChange(of: scenePhase) { _, phase in
+            guard phase != .active, editing else { return }
+            PageLinks.rename(from: startTitle, to: page.title, in: allPages)
+            if !page.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { startTitle = page.title }
+        }
     }
 
     // MARK: View mode

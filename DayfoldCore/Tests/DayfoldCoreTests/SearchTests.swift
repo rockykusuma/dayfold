@@ -146,6 +146,11 @@ extension SearchTests {
         #expect(Search.pages([body, title], query: "xcode").map(\.title) == ["Xcode", "Other"])
     }
 
+    @Test func pagesTieByTitle() {
+        let b = NotePage(title: "Beta notes", updatedAt: at(2026,10,1)), a = NotePage(title: "Alpha notes", updatedAt: at(2026,10,1))
+        #expect(Search.pages([b, a], query: "notes").map(\.title) == ["Alpha notes", "Beta notes"])
+    }
+
     @Test func pagesIgnoreTaskTokens() {
         let p = NotePage(title: "x", body: "#x @a is:open")
         for q in ["#x", "@a", "is:open", "x #"] { #expect(Search.pages([p], query: q).isEmpty) }
