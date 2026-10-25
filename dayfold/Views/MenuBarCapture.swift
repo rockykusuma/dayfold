@@ -64,6 +64,11 @@ struct MenuBarCapture: View {
         .frame(width: 380)
         .background(Color.paper)
         .task { focused = true }
+        // The menu-bar window and the hotkey panel are reused, so refocus on every show.
+        // ponytail: any window becoming key; setting focus in a hidden window is harmless.
+        .onReceive(NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)) { _ in
+            focused = true
+        }
     }
 
     /// Bring the existing day-page window forward; open one only if it was closed.

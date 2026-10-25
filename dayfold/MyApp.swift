@@ -7,6 +7,9 @@ import UserNotifications
 struct DayfoldApp: App {
     let container: ModelContainer
     @Environment(\.scenePhase) private var scenePhase
+    #if os(macOS)
+    @NSApplicationDelegateAdaptor(MacAppDelegate.self) private var appDelegate
+    #endif
 
     init() {
         // Set before launch finishes so a tap that cold-launches the app still opens Review.

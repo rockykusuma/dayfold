@@ -9,6 +9,9 @@ struct SettingsView: View {
     @AppStorage(ReviewReminder.minuteKey) private var minute = ReviewReminder.defaultMinute
     @AppStorage(ReviewReminder.weekdaysKey) private var weekdays = ReviewReminder.defaultWeekdays
     @AppStorage("review.nudgeAfter") private var nudgeAfter = 3
+    #if os(macOS)
+    @AppStorage(QuickCaptureHotkey.storageKey) private var hotkey = QuickCaptureHotkey.default.rawValue
+    #endif
     @Environment(\.openURL) private var openURL
     @Environment(\.scenePhase) private var scenePhase
     @State private var notifications: UNAuthorizationStatus?
@@ -37,6 +40,21 @@ struct SettingsView: View {
                      ? "No days selected — the reminder is off. You can still open Review from the toolbar."
                      : "A reminder to fold today's open tasks into tomorrow. Things you're waiting on join Review once they've waited this long.")
             }
+
+            #if os(macOS)
+            Section {
+                Picker("Quick capture", selection: $hotkey) {
+                    ForEach(QuickCaptureHotkey.allCases, id: \.self) { Text($0.title).tag($0.rawValue) }
+                }
+            } footer: {
+                if HotKey.shared.conflict {
+                    Text("In use by another app — pick another").foregroundStyle(.orange)
+                }
+            }
+            .onChange(of: hotkey) {
+                HotKey.shared.apply(QuickCaptureHotkey(rawValue: hotkey) ?? .default) { QuickCapturePanel.shared.toggle() }
+            }
+            #endif
 
             Section("Notifications") {
                 LabeledContent("Permission") {
