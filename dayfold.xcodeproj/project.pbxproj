@@ -12,6 +12,8 @@
 		966E2D8B308E8E1300C85782 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 966E2D6D308E8DDB00C85782 /* SwiftUI.framework */; };
 		966E2D9C308E8E1600C85782 /* DayfoldWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 966E2D89308E8E1300C85782 /* DayfoldWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		966E2DA2308E8E5F00C85782 /* DayfoldCore in Frameworks */ = {isa = PBXBuildFile; productRef = 966E2DA1308E8E5F00C85782 /* DayfoldCore */; };
+		96B3655A308EFBAE007AD4B6 /* DayfoldShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 96B36550308EFBAE007AD4B6 /* DayfoldShare.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		96B36560308EFBC2007AD4B6 /* DayfoldCore in Frameworks */ = {isa = PBXBuildFile; productRef = 96B3655F308EFBC2007AD4B6 /* DayfoldCore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -22,6 +24,13 @@
 			remoteGlobalIDString = 966E2D88308E8E1300C85782;
 			remoteInfo = DayfoldWidgetsExtension;
 		};
+		96B36558308EFBAE007AD4B6 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 000000000000000000000000 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 96B3654F308EFBAE007AD4B6;
+			remoteInfo = DayfoldShare;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -30,6 +39,7 @@
 			dstPath = "";
 			dstSubfolder = PlugIns;
 			files = (
+				96B3655A308EFBAE007AD4B6 /* DayfoldShare.appex in Embed Foundation Extensions */,
 				966E2D9C308E8E1600C85782 /* DayfoldWidgetsExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
@@ -42,6 +52,7 @@
 		966E2D6D308E8DDB00C85782 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		966E2D89308E8E1300C85782 /* DayfoldWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = DayfoldWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		966E2DA3308E8E6F00C85782 /* DayfoldWidgetsExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DayfoldWidgetsExtension.entitlements; sourceTree = "<group>"; };
+		96B36550308EFBAE007AD4B6 /* DayfoldShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = DayfoldShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -58,6 +69,13 @@
 				Info.plist,
 			);
 			target = 966E2D88308E8E1300C85782 /* DayfoldWidgetsExtension */;
+		};
+		96B3655E308EFBAE007AD4B6 /* Exceptions for "DayfoldShare" folder in "DayfoldShare" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 96B3654F308EFBAE007AD4B6 /* DayfoldShare */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -78,6 +96,14 @@
 			path = DayfoldWidgets;
 			sourceTree = "<group>";
 		};
+		96B36551308EFBAE007AD4B6 /* DayfoldShare */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				96B3655E308EFBAE007AD4B6 /* Exceptions for "DayfoldShare" folder in "DayfoldShare" target */,
+			);
+			path = DayfoldShare;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -95,6 +121,12 @@
 				966E2DA2308E8E5F00C85782 /* DayfoldCore in Frameworks */,
 			);
 		};
+		96B3654D308EFBAE007AD4B6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+				96B36560308EFBC2007AD4B6 /* DayfoldCore in Frameworks */,
+			);
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -104,6 +136,7 @@
 				966E2DA3308E8E6F00C85782 /* DayfoldWidgetsExtension.entitlements */,
 				000000000000000000000010 /* dayfold */,
 				966E2D8C308E8E1300C85782 /* DayfoldWidgets */,
+				96B36551308EFBAE007AD4B6 /* DayfoldShare */,
 				966E2D6A308E8DDB00C85782 /* Frameworks */,
 				000000000000000000000020 /* Products */,
 			);
@@ -114,6 +147,7 @@
 			children = (
 				000000000000000000000120 /* dayfold.app */,
 				966E2D89308E8E1300C85782 /* DayfoldWidgetsExtension.appex */,
+				96B36550308EFBAE007AD4B6 /* DayfoldShare.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -143,6 +177,7 @@
 			);
 			dependencies = (
 				966E2D9B308E8E1600C85782 /* PBXTargetDependency */,
+				96B36559308EFBAE007AD4B6 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				000000000000000000000010 /* dayfold */,
@@ -176,6 +211,27 @@
 			productReference = 966E2D89308E8E1300C85782 /* DayfoldWidgetsExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		96B3654F308EFBAE007AD4B6 /* DayfoldShare */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 96B3655D308EFBAE007AD4B6 /* Build configuration list for PBXNativeTarget "DayfoldShare" */;
+			buildPhases = (
+				96B3654C308EFBAE007AD4B6 /* Sources */,
+				96B3654D308EFBAE007AD4B6 /* Frameworks */,
+				96B3654E308EFBAE007AD4B6 /* Resources */,
+			);
+			buildRules = (
+			);
+			fileSystemSynchronizedGroups = (
+				96B36551308EFBAE007AD4B6 /* DayfoldShare */,
+			);
+			name = DayfoldShare;
+			packageProductDependencies = (
+				96B3655F308EFBC2007AD4B6 /* DayfoldCore */,
+			);
+			productName = DayfoldShare;
+			productReference = 96B36550308EFBAE007AD4B6 /* DayfoldShare.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -190,6 +246,9 @@
 						CreatedOnToolsVersion = 26.3;
 					};
 					966E2D88308E8E1300C85782 = {
+						CreatedOnToolsVersion = 27.1;
+					};
+					96B3654F308EFBAE007AD4B6 = {
 						CreatedOnToolsVersion = 27.1;
 					};
 				};
@@ -213,6 +272,7 @@
 			targets = (
 				000000000000000100000000 /* dayfold */,
 				966E2D88308E8E1300C85782 /* DayfoldWidgetsExtension */,
+				96B3654F308EFBAE007AD4B6 /* DayfoldShare */,
 			);
 		};
 /* End PBXProject section */
@@ -224,6 +284,11 @@
 			);
 		};
 		966E2D87308E8E1300C85782 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		96B3654E308EFBAE007AD4B6 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
 			);
@@ -241,6 +306,11 @@
 			files = (
 			);
 		};
+		96B3654C308EFBAE007AD4B6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -248,6 +318,12 @@
 			isa = PBXTargetDependency;
 			target = 966E2D88308E8E1300C85782 /* DayfoldWidgetsExtension */;
 			targetProxy = 966E2D9A308E8E1600C85782 /* PBXContainerItemProxy */;
+		};
+		96B36559308EFBAE007AD4B6 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			platformFilter = ios;
+			target = 96B3654F308EFBAE007AD4B6 /* DayfoldShare */;
+			targetProxy = 96B36558308EFBAE007AD4B6 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -505,8 +581,8 @@
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				SKIP_INSTALL = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
@@ -546,8 +622,77 @@
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
 				SKIP_INSTALL = YES;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		96B3655B308EFBAE007AD4B6 /* Debug configuration for PBXNativeTarget "DayfoldShare" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = DayfoldShare.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = DayfoldShare/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Dayfold;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.rockykusuma.dayfold.app.DayfoldShare;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		96B3655C308EFBAE007AD4B6 /* Release configuration for PBXNativeTarget "DayfoldShare" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = DayfoldShare.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = DayfoldShare/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Dayfold;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.rockykusuma.dayfold.app.DayfoldShare;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
@@ -584,6 +729,14 @@
 			);
 			defaultConfigurationName = Release;
 		};
+		96B3655D308EFBAE007AD4B6 /* Build configuration list for PBXNativeTarget "DayfoldShare" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				96B3655B308EFBAE007AD4B6 /* Debug configuration for PBXNativeTarget "DayfoldShare" */,
+				96B3655C308EFBAE007AD4B6 /* Release configuration for PBXNativeTarget "DayfoldShare" */,
+			);
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
@@ -599,6 +752,11 @@
 			productName = DayfoldCore;
 		};
 		966E2DA1308E8E5F00C85782 /* DayfoldCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 961ADA583084FCAD00300EC9 /* XCLocalSwiftPackageReference "DayfoldCore" */;
+			productName = DayfoldCore;
+		};
+		96B3655F308EFBC2007AD4B6 /* DayfoldCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 961ADA583084FCAD00300EC9 /* XCLocalSwiftPackageReference "DayfoldCore" */;
 			productName = DayfoldCore;

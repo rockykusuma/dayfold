@@ -41,7 +41,10 @@ struct DayfoldApp: App {
         .commands { CaptureCommands() }
         .onChange(of: scenePhase, initial: true) { _, phase in
             // Link legacy from: text, merge duplicate people, remove duplicate repeats.
-            if phase == .active { try? Maintenance.tidy(in: container.mainContext) }
+            if phase == .active {
+                try? Maintenance.tidy(in: container.mainContext)
+                addShared()
+            }
             // Cover journal content whenever not active (before the app-switcher snapshot); lock only on
             // .background, since the Face ID prompt itself makes the app inactive. Mac: JournalLock watches resign-active.
             JournalLock.shared.appActive(phase == .active)
@@ -60,5 +63,21 @@ struct DayfoldApp: App {
         }
         .menuBarExtraStyle(.window)
         #endif
+    }
+
+    /// Things shared from other apps on iPhone (the share extension's inbox) join today, like a paste.
+    private func addShared() {
+        #if DEBUG
+        if DemoData.isEnabled { return }   // the demo store is thrown away; leave shares for the real one
+        #endif
+        guard let dir = ShareInbox.directory else { return }
+        let context = container.mainContext
+        ShareInbox.drain(dir) { text in
+            let entries = Capture.addLines(text, kind: .task, scope: .lastUsed, day: Date(), in: context)
+            do { try context.save() } catch {
+                entries.forEach(context.delete)   // not rollback(): that would drop the UI's unsaved edits
+                throw error
+            }
+        }
     }
 }
