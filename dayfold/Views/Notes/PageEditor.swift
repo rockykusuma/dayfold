@@ -11,8 +11,11 @@ struct PageEditor: View {
     @FocusState private var focus: Field?
     /// Draft for the title field, so a dropped character never stays visible; the model gets every real change.
     @State private var title: String
-    /// The body selection in `Character` offsets. Stays nil before iOS 18 / macOS 15 (no selection API): formats apply at the end.
-    @State private var caret: Range<Int>?
+    /// The editor's own text and selection, kept together: it reports them separately and in either order, so a
+    /// selection read against the model's older text was dropped (the first letter on an empty page put the caret before it).
+    @State private var draft: String
+    /// The editor's `TextSelection` (iOS 18 / macOS 15; `Any` so the view still builds for iOS 17).
+    @State private var selection: Any?
 
     private enum Field { case title, body }
 
@@ -21,6 +24,21 @@ struct PageEditor: View {
         self.allPages = allPages
         self.focusTitle = focusTitle
         _title = State(initialValue: page.title)
+        _draft = State(initialValue: page.body)
+    }
+
+    /// The selection in `Character` offsets of `draft`. Nil before iOS 18 / macOS 15 (no selection API): formats apply at the end.
+    private var caret: Range<Int>? {
+        guard #available(iOS 18, macOS 15, *), let s = selection as? TextSelection, case .selection(let r) = s.indices,
+              r.upperBound <= draft.endIndex else { return nil }
+        return draft.distance(from: draft.startIndex, to: r.lowerBound)..<draft.distance(from: draft.startIndex, to: r.upperBound)
+    }
+
+    /// Puts the editor's caret / selection at `r` in `draft`.
+    private func setCaret(_ r: Range<Int>) {
+        guard #available(iOS 18, macOS 15, *), r.upperBound <= draft.count else { return }
+        let lo = draft.index(draft.startIndex, offsetBy: r.lowerBound)
+        selection = TextSelection(range: lo..<draft.index(lo, offsetBy: r.count))
     }
 
     var body: some View {
@@ -48,8 +66,11 @@ struct PageEditor: View {
             bodyEditor
                 .focused($focus, equals: .body)
                 .scrollContentBackground(.hidden)
+                .onChange(of: page.body) { _, stored in   // synced from another device: take it, drop the stale selection
+                    if stored != draft { draft = stored; selection = nil }
+                }
                 .overlay(alignment: .topLeading) {
-                    if page.body.isEmpty {
+                    if draft.isEmpty {
                         Text("Write in Markdown…")
                             .foregroundStyle(.tertiary)
                             .padding(.top, 8)
@@ -70,9 +91,9 @@ struct PageEditor: View {
     @ViewBuilder
     private var bodyEditor: some View {
         if #available(iOS 18, macOS 15, *) {
-            TextEditor(text: bodyContinuingLists, selection: textSelection)
+            TextEditor(text: bodyContinuingLists, selection: Binding(get: { selection as? TextSelection }, set: { selection = $0 }))
         } else {
-            TextEditor(text: field(\.body))
+            TextEditor(text: bodyContinuingLists)
         }
     }
 
@@ -80,31 +101,16 @@ struct PageEditor: View {
     /// Decided on the next turn of the main queue: the editor reports the caret separately, in either order,
     /// and the caret is what says where the Return went.
     private var bodyContinuingLists: Binding<String> {
-        Binding(get: { page.body }, set: { new in
-            let old = page.body
+        Binding(get: { draft }, set: { new in
+            let old = draft
+            draft = new
             set(\.body, new)
             guard new.count == old.count + 1 else { return }
             DispatchQueue.main.async {
-                guard page.body == new, let c = caret, c.isEmpty, c.lowerBound > 0,
+                guard draft == new, let c = caret, c.isEmpty, c.lowerBound > 0,
                       let edit = PageFormat.continueList(old: old, new: new, at: c.lowerBound - 1) else { return }
-                set(\.body, edit.text)
-                caret = edit.selection
+                apply(edit)
             }
-        })
-    }
-
-    /// `caret` as the editor's selection; multi-selections (Mac ⌘-drag) are ignored.
-    @available(iOS 18, macOS 15, *)
-    private var textSelection: Binding<TextSelection?> {
-        Binding(get: {
-            let t = page.body
-            guard let r = caret, r.upperBound <= t.count else { return nil }
-            let lo = t.index(t.startIndex, offsetBy: r.lowerBound)
-            return TextSelection(range: lo..<t.index(lo, offsetBy: r.count))
-        }, set: { new in
-            let t = page.body
-            guard let new, case .selection(let r) = new.indices, r.upperBound <= t.endIndex else { return }
-            caret = t.distance(from: t.startIndex, to: r.lowerBound)..<t.distance(from: t.startIndex, to: r.upperBound)
         })
     }
 
@@ -165,7 +171,7 @@ struct PageEditor: View {
     @ViewBuilder
     private var suggestionStrip: some View {
         // Only while the caret sits right after an open `[[` (or, without a caret, at the end).
-        if caret?.isEmpty ?? true, let token = PageLinks.completionToken(in: String(page.body.prefix(caret?.lowerBound ?? .max))) {
+        if caret?.isEmpty ?? true, let token = PageLinks.completionToken(in: String(draft.prefix(caret?.lowerBound ?? .max))) {
             let titles = suggestions(for: token)
             if !titles.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -217,12 +223,16 @@ struct PageEditor: View {
 
     /// Runs a `PageFormat` edit on the body at the caret (the end when unknown) and puts the caret where it says.
     private func format(_ op: (PageEdit) -> PageEdit) {
-        let n = page.body.count
+        let n = draft.count
         let sel = caret.map { $0.clamped(to: 0..<n) } ?? n..<n
-        let out = op(PageEdit(text: page.body, selection: sel))
-        set(\.body, out.text)
-        caret = out.selection
+        apply(op(PageEdit(text: draft, selection: sel)))
         focus = .body
+    }
+
+    private func apply(_ edit: PageEdit) {
+        draft = edit.text
+        set(\.body, edit.text)
+        setCaret(edit.selection)
     }
 
     private func set(_ key: ReferenceWritableKeyPath<NotePage, String>, _ value: String) {
@@ -236,7 +246,4 @@ struct PageEditor: View {
         return !k.isEmpty && allPages.contains { $0.id != page.id && !$0.isDeleted && PageLinks.key($0.title) == k }
     }
 
-    private func field(_ key: ReferenceWritableKeyPath<NotePage, String>) -> Binding<String> {
-        Binding(get: { page[keyPath: key] }, set: { set(key, $0) })
-    }
 }
