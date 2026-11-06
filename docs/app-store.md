@@ -68,5 +68,5 @@ Dayfold needs no account or sign-in. Data syncs through the reviewer's own iClou
 ## Screenshots
 - iPhone 6.9" (1320 × 2868): Today, Review, Journal, Notes, Week, People.
 - iPad 13" (2064 × 2752): the same six.
-- Mac: 2880 × 1800 (or 2560 × 1600 / 1440 × 900 / 1280 × 800), still to take.
+- Mac 2880 × 1800: Today, Review, Journal, Notes, Week, Search. Taken from the Debug build with `-demo -NSRequiresAquaSystemAppearance YES -AppleShowScrollBars WhenScrolling`, the window set to 1440 × 900 pt and captured alone (`screencapture -o -l <window id>`), then flattened onto the paper colour (no transparent corners).
 Regenerate iPhone/iPad with the demo data: boot the simulator, override the status bar to 9:41, install a Debug build and launch with `-demo` plus `-review`, `-journal`, `-notes -page Release`, `-journal -week` or `-people`.
