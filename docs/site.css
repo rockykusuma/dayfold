@@ -24,3 +24,12 @@ h3 { font-size: 1.05rem; margin: 20px 0 4px; }
 a { color: var(--accent); }
 ul { padding-left: 1.2em; }
 li { margin: 6px 0; }
+
+/* The animated hero: a little wider than the text column when there's room */
+.hero {
+  width: min(720px, calc(100vw - 32px));
+  margin: 32px 0 8px;
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+}

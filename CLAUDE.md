@@ -17,6 +17,7 @@ Owner drives Xcode; Claude writes code and reviews. Read `docs/spec.md` first.
 - `DayfoldWidgets/` — widget extension (`DayfoldWidgetsExtension`, iOS + Mac): "Today" widget (small: open count + progress; medium/large: open tasks, priority first, "x of y done"; iOS Lock Screen circular/rectangular). Reads the store read-only, no CloudKit; the app reloads it on every `ModelContext.didSave`.
 - `DayfoldShare/` — iPhone share extension (iOS only; platform-filtered out of the Mac build): "Dayfold" in the share sheet, editable text + the page link → `ShareInbox` file in the App Group; the app adds inbox items to today on becoming active (`DayfoldApp.addShared`). Never opens the store. Mac uses Services instead.
 - `DayfoldCore/.../SharedStore.swift` — App Group `group.com.rockykusuma.dayfold`, the model list, store URL, one-time `moveStore` from the pre-group location; `DayPage.glance` (widget summary).
+- `web/hero/` — the animated hero on the support page (Stageshow kit, React + Vite); `npm run build` writes `docs/hero/hero.js` + `hero.css`. See its README.
 - `docs/spec.md` — v0.1 spec + decisions log. Append decisions there.
 
 ## Rules
