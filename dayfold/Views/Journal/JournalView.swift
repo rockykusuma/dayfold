@@ -58,6 +58,7 @@ struct JournalView: View {
                                 .font(.system(.headline, design: .serif))
                                 // A concrete colour: hierarchical `.primary` resolves to the header's grey style.
                                 .foregroundStyle(Color.primary)
+                                .frame(maxWidth: 640, alignment: .leading).frame(maxWidth: .infinity)   // lines up with the cards
                         }
                     }
                 }

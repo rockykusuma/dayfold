@@ -57,6 +57,7 @@ struct NotesView: View {
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
+            .readableColumn()
             .background(Color.paper)
             .navigationTitle("Notes")
             .searchable(text: $query, prompt: "Search notes")

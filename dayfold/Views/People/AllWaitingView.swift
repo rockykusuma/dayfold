@@ -28,6 +28,7 @@ struct AllWaitingView: View {
             }
         }
         .scrollContentBackground(.hidden)
+        .readableColumn()
         .background(Color.paper)
         .navigationTitle("Waiting")
         .navigationDestination(item: $opened) { PersonView(person: $0) }

@@ -59,6 +59,7 @@ struct WeekView: View {
         .listStyle(.plain)
         .environment(\.defaultMinListRowHeight, 28) // person sub-headers; entry rows keep their 44pt marks
         .scrollContentBackground(.hidden)
+        .readableColumn()
         .background(Color.paper)
         #if os(macOS)
         .navigationTitle(title)

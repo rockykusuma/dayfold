@@ -85,6 +85,7 @@ struct SearchView: View {
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
+        .readableColumn()
         .background(Color.paper)
         .navigationTitle("Search")
         .searchable(text: $router.query, prompt: "Search everything")

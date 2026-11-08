@@ -70,6 +70,7 @@ struct DayPageView: View {
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
+            .readableColumn()
             .background(Color.paper)
             .scrollDismissesKeyboard(.interactively)
             .dropDestination(for: String.self) { items, _ in

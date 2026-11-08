@@ -48,6 +48,7 @@ struct PeopleListView: View {
             }
         }
         .scrollContentBackground(.hidden)
+        .readableColumn()
         .background(Color.paper)
         .navigationTitle(team ?? "People")
         .navigationDestination(for: Person.self) { PersonView(person: $0) }

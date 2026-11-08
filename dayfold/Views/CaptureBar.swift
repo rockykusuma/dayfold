@@ -91,6 +91,7 @@ struct CaptureBar: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
+        .readableColumn()
         .background(.bar)
         .overlay(alignment: .top) { Divider() }
         .dynamicTypeSize(...DynamicTypeSize.accessibility2) // keep room for the page above

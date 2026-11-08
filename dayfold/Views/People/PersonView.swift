@@ -42,6 +42,7 @@ struct PersonView: View {
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
+        .readableColumn()
         .background(Color.paper)
         .scrollDismissesKeyboard(.interactively)
         .safeAreaInset(edge: .bottom) {
@@ -57,6 +58,7 @@ struct PersonView: View {
                 .padding(.top, 8)
                 CaptureBar(filter: .all, day: Date(), focus: $captureFocused, linkedTo: (person, link))
             }
+            .readableColumn()
             .background(.bar)
         }
         .toolbar {
