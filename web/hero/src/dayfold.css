@@ -1,5 +1,5 @@
-/* Dayfold's hero. Pinned, bottom bleed on the page itself (no plate): the window
-   sits one gutter in from the top and sides and runs off the bottom. */
+/* Dayfold's hero. Device pair on the page itself (no plate): the Mac window inset
+   top and right, off the bottom, the iPhone straddling its sidebar. */
 .dh {
   & .ss-stage {
     --gutter: 48px;
@@ -10,6 +10,13 @@
   }
 
   & .ss-stage[data-layout="compact"] { --gutter: 16px; }
+
+  .dh-pair-phone {
+    position: absolute;
+    top: 88px;
+    left: var(--gutter);
+    z-index: 2;
+  }
 
   /* Phone column: the iPhone app, pinned a gutter from the top, off the bottom */
   .dh-phone {
@@ -54,10 +61,12 @@
   .dh-app .dh-meta { font-size: 13px; }
   .dh-app .dh-age { font-size: 14px; }
 
+  /* Device pair: the window inset top and right, its left edge under the
+     phone's middle, so the phone straddles it over the sidebar (chrome) */
   .dh-window {
     position: absolute;
     top: var(--gutter);
-    left: var(--gutter);
+    left: 168px;
     right: var(--gutter);
     height: 420px;
     box-shadow: var(--ss-shadow-hero);

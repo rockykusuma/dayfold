@@ -3,16 +3,17 @@ import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { Badge, Bar, Button, Check, Collapse, Phone, Roll, Row, Stage, Text, Window, type Act } from './kit'
 import './dayfold.css'
 
-// Dayfold's hero: open tasks carry forward on their own. Tick one task done,
-// step to tomorrow: what was finished stays behind, what's open is already on
+// Dayfold's hero: open tasks carry forward on their own. Tick one task done
+// on the Mac (the iPhone beside it ticks a beat later: iCloud sync), step to
+// tomorrow: what was finished stays behind, what's open is already on
 // tomorrow's page, a day older. Back to Today and untick, so the loop ends
-// where it began.
+// where it began. Below 560px it's the iPhone alone.
 
 type Day = 'today' | 'tomorrow'
-type S = { done: boolean; day: Day }
+type S = { done: boolean; day: Day; synced: boolean }
 
-const initial: S = { done: false, day: 'today' }
-const POSTER: S = { done: true, day: 'tomorrow' }
+const initial: S = { done: false, day: 'today', synced: false }
+const POSTER: S = { done: true, day: 'tomorrow', synced: true }
 
 const REST = { wide: { x: 600, y: 330 }, compact: { x: 290, y: 380 } }
 
@@ -25,7 +26,9 @@ async function script(a: Act<S>) {
   await a.wait(200)
   await a.click()
   await a.set({ done: true })
-  await a.wait(1000)
+  await a.wait(700)
+  await a.set({ synced: true })   // the iPhone catches up
+  await a.wait(800)
 
   // 2. Step to tomorrow: open tasks are already there, a day older
   a.mark('tomorrow')
@@ -47,6 +50,8 @@ async function script(a: Act<S>) {
   await a.wait(200)
   await a.click()
   await a.set({ done: false })
+  await a.wait(700)
+  await a.set({ synced: false })
   await a.wait(500)
   await a.move('rest')
   await a.wait(900)
@@ -74,7 +79,7 @@ function Task({ title, meta, lead, done, target, pad = 8 }: { title: ReactNode; 
 }
 
 /** The day page: the same on the Mac and the iPhone. */
-function Page({ s, phone }: { s: S; phone?: boolean }) {
+function Page({ s, phone, passive }: { s: Pick<S, 'done' | 'day'>; phone?: boolean; passive?: boolean }) {
   const tomorrow = s.day === 'tomorrow'
   const shown = tomorrow ? 4 : 6
   const doneCount = tomorrow ? 0 : s.done ? 2 : 1
@@ -91,12 +96,12 @@ function Page({ s, phone }: { s: S; phone?: boolean }) {
         </div>
         <div className="dh-nav">
           <span className="dh-today" data-show={tomorrow || undefined}>
-            <Button size={phone ? 'large' : 'small'} data-target="today">Today</Button>
+            <Button size={phone ? 'large' : 'small'} data-target={passive ? undefined : 'today'}>Today</Button>
           </span>
           <span className="dh-arrow">
             <ChevronLeft size={18} strokeWidth={2} />
           </span>
-          <span className="dh-arrow" data-target="next" data-cursor="pointer">
+          <span className="dh-arrow" data-target={passive ? undefined : 'next'} data-cursor="pointer">
             <ChevronRight size={18} strokeWidth={2} />
           </span>
         </div>
@@ -127,7 +132,7 @@ function Page({ s, phone }: { s: S; phone?: boolean }) {
           <Task
             title={<Text>Review Arjun's design doc</Text>}
             done={s.done}
-            target="check-review"
+            target={passive ? undefined : 'check-review'}
             meta={
               <>
                 <Text>2:30 PM</Text>
@@ -155,6 +160,19 @@ function Page({ s, phone }: { s: S; phone?: boolean }) {
         <Task title={<Bar w={150} h={7} tone={3} />} meta={<Bar w={48} h={6} tone={2} />} />
         <Task title={<Bar w={118} h={7} tone={3} />} meta={<Bar w={56} h={6} tone={2} />} />
       </div>
+    </div>
+  )
+}
+
+/** The iPhone app's frame: settings and Review in the top bar, the day page under it. */
+function PhoneApp({ reviews, children }: { reviews: string; children: ReactNode }) {
+  return (
+    <div className="dh-app">
+      <div className="dh-appbar">
+        <span className="dh-circle"><Settings size={20} strokeWidth={1.75} /></span>
+        <span className="dh-review"><Inbox size={18} strokeWidth={1.75} /><Roll>{reviews}</Roll></span>
+      </div>
+      {children}
     </div>
   )
 }
@@ -212,13 +230,9 @@ export function DayfoldHero() {
         return layout === 'compact' ? (
           <>
             <Phone width={326} className="dh-phone">
-              <div className="dh-app">
-                <div className="dh-appbar">
-                  <span className="dh-circle"><Settings size={20} strokeWidth={1.75} /></span>
-                  <span className="dh-review"><Inbox size={18} strokeWidth={1.75} /><Roll>{reviews}</Roll></span>
-                </div>
+              <PhoneApp reviews={reviews}>
                 <Page s={s} phone />
-              </div>
+              </PhoneApp>
             </Phone>
             <span data-target="rest" style={{ position: 'absolute', left: REST.compact.x, top: REST.compact.y }} />
           </>
@@ -238,6 +252,12 @@ export function DayfoldHero() {
             >
               <Page s={s} />
             </Window>
+            {/* The iPhone on the same account, straddling the window's sidebar */}
+            <Phone width={236} className="dh-pair-phone">
+              <PhoneApp reviews={s.synced ? '2' : '3'}>
+                <Page s={{ done: s.synced, day: 'today' }} phone passive />
+              </PhoneApp>
+            </Phone>
             <span data-target="rest" style={{ position: 'absolute', left: REST.wide.x, top: REST.wide.y }} />
           </>
         )

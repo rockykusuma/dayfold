@@ -1,8 +1,8 @@
 # Dayfold hero
 
 The animated product shot at the top of the support page (`docs/index.html`): tick a task done,
-step to tomorrow, and the open tasks are already there, a day older. A Mac window on wide pages,
-the iPhone app below 560px. Built with the Stageshow kit (`src/kit/`, MIT, brand logos removed).
+step to tomorrow, and the open tasks are already there, a day older. A Mac window with the iPhone
+beside it on wide pages (the tick syncs to the phone), the iPhone alone below 560px. Built with the Stageshow kit (`src/kit/`, MIT, brand logos removed).
 
 ```sh
 cd web/hero
